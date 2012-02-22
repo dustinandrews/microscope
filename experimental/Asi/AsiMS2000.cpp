@@ -15,30 +15,7 @@
 AsiMS2000::AsiMS2000()
 {
   _numCommands = NUMCOMMANDS;
-//  _commands  =
-//        {"ACCEL","AALIGN","AFCONT","AFLIM","AFOCUS","AFSET","AFMOVE",
-//                  "AHOME","AIJ","ARRAY","AZERO","BACKLASH","BCUSTOM","BENABLE","BUILD",
-//                  "CDATE","CNTS","CUSTOMA","CUSTOMB","DACK","DUMP","ENSYNC","EPOLARITY",
-//                  "ERROR","HALT","HERE","HOME","INFO","JOYSTICK","JSSPD","KADC","KD","KI",
-//                  "KP","LCD","LED","LLADDR","LOAD","LOCK","LOCKRG","LOCKSET","MAINTAIN",
-//                  "MOTCTRL","MOVE","MOVREL","PCROS","PEDAL","RBMODE","RDADC","RDSBYTE",
-//                  "RDSTAT","RELOCK","RESET","RT","RUNAWAY","SAVESET","SAVEPOS","SCAN",
-//                  "SCANR","SCANV","SECURE","SETHOME","SETLOW","SETUP","SI","SPEED","SPIN",
-//                  "STATUS","STOPBITS","TTL","UM","UNITS","UNLOCK","VB","VECTOR","VERSION",
-//                  "WAIT","WHERE","WHO","WRDAC","ZERO","Z2B","ZS"
-//                  };
-//  _shortcuts  =
-//        {"AC","AA","AFCONT","AFLIM","AFOCUS","AFSET","AFMOVE",
-//                   "AH","IJ","AR","AZ","B","BCA","BE","BU",
-//                   "CD","C","CCA","CCB","D","DU","ES","EP",
-//                   "E","\\","H","!","I","J","JS","KA","KD","KI",
-//                   "KP","LCD","LED","LL","LD","LK","LR","LS","MA",
-//                   "MC","M","R","PC","PD","RM","RA","RB",
-//                   "RS","RL","~","RT","RU","SS","SP","SN",
-//                   "NR","NV","SECURE","HM","SL","SU","SI","S","@",
-//                   "/","SB","TTL","UM","UN","UL","VB","VE","V",
-//                   "WT","W","N","WRDAC","Z","Z2B","ZS"
-//                   };
+
 }
 
 void AsiMS2000::checkSerial()
@@ -46,9 +23,14 @@ void AsiMS2000::checkSerial()
   int inByte = 0;
   static int bufferPos = 0;
   static char commandBuffer [BUFFERSIZE];
-  if(Serial.available() > 0)
+  if(Serial1.available() > 0)
   {
-    inByte = Serial.read();
+    inByte = Serial1.read();
+    int x = (int)inByte;
+    char buffer [20];
+    sprintf(buffer, "(%d)", x);
+    Serial.print(buffer);
+    Serial.print(inByte, BYTE); 
     if(bufferPos > BUFFERSIZE)
     {
       bufferPos = 0;
@@ -56,14 +38,21 @@ void AsiMS2000::checkSerial()
       return;
     }
     
+    
     //check for <CR> or | since arduino env can't send CR.
-    if(inByte == 27 || inByte == 124)
+    if(inByte == 13 || inByte == 124)
     {
+      Serial.println("");
       commandBuffer[bufferPos]  = '\0';
       interpretCommand(commandBuffer, bufferPos);
       bufferPos =0;
     }
-    else
+    else if(inByte == 10 || inByte == 27)//backspace or escape
+    {
+      clearCommandBuffer(commandBuffer);
+      bufferPos = 0;
+    }
+    else if(inByte > 31)//ignore control characters
     {
       commandBuffer[bufferPos++] = inByte;
     }
@@ -75,17 +64,43 @@ void AsiMS2000::interpretCommand(char commandBuffer[], int bufferPos)
 {
     Serial.println("interpretting");
     Serial.println(commandBuffer);
-    confirmSpaceChar(commandBuffer);
+    String c = String(commandBuffer);
+    int s = c.indexOf(' ');
     clearCommandBuffer(commandBuffer);
+    
+    String base;
+    if(s > 0)
+    {
+      base = c.substring(0,s);
+    }
+    else
+    {
+      base = c;
+    }
+    
+    int commandNum = getCommandNum(base);
+    if(commandNum > -1)
+    {
+      Serial.print(c);
+      Serial.print(" detected command number: ");
+      Serial.println(commandNum);
+      selectCommand(commandNum);
+    }
 }
 
-int AsiMS2000::confirmSpaceChar(char commandBuffer[])
+
+int AsiMS2000::getCommandNum(String c)
 {
-   String c = String(commandBuffer);
-   int firstSpace = c.indexOf(' ');
-   Serial.print("first space =");
-   Serial.println(firstSpace);
-   return firstSpace;
+  Serial.println("checking for command.");
+  for(int i = 0; i < _numCommands; i++)
+  {
+    if( c.equalsIgnoreCase(_commands[i]) || c.equalsIgnoreCase(_shortcuts[i]) )
+    {
+      return i;
+    }     
+  }
+  returnErrorToSerial(-1);//unknown command
+  return -1;
 }
 
 void AsiMS2000::bufferOverunError(char commandBuffer[])
@@ -113,27 +128,39 @@ void AsiMS2000::displayCommands()
 }
 
 
+//In order to easily switch serial ports, run all data through subroutines
+void AsiMS2000::serialPrint(char* data)
+{
+  Serial.print(">");
+  Serial.println(data);
+  Serial1.print(data);
+}
+
+void AsiMS2000::serialPrintln(char* data)
+{
+  Serial.print(">");
+  Serial.println(data);
+  Serial1.println(data);
+}
+
 void AsiMS2000::returnErrorToSerial(int errornum)
 {
-  Serial.print(":N");
-  Serial.println(errornum);
+  serialPrint(":N");
+  char e [1] = {errornum};
+  serialPrintln(e);
 }
 
 void AsiMS2000::accel()
 {
     returnErrorToSerial(-6);
-
-
 }
 
 
 void AsiMS2000::aalign()
 {
     returnErrorToSerial(-6);
-    returnErrorToSerial(-6);
-
-
 }
+
 void AsiMS2000::afcont()
 {
     returnErrorToSerial(-6);
@@ -641,24 +668,19 @@ void AsiMS2000::si()
 void AsiMS2000::speed()
 {
     returnErrorToSerial(-6);
-
-
 }
 
 
 void AsiMS2000::spin()
 {
     returnErrorToSerial(-6);
-
-
 }
 
 
 void AsiMS2000::status()
 {
-    returnErrorToSerial(-6);
-
-
+    //Status should send "B" for Busy and "N" for Not busy.
+    serialPrintln("N");
 }
 
 
@@ -779,6 +801,263 @@ void AsiMS2000::zs()
     returnErrorToSerial(-6);
 
 
+}
+
+void AsiMS2000::selectCommand(int commandNum)
+{
+  switch(commandNum)
+  {
+      case 0:
+          accel();
+          break;
+      case 1:
+          aalign();
+          break;
+      case 2:
+          afcont();
+          break;
+      case 3:
+          aflim();
+          break;
+      case 4:
+          afocus();
+          break;
+      case 5:
+          afset();
+          break;
+      case 6:
+          afmove();
+          break;
+      case 7:
+          ahome();
+          break;
+      case 8:
+          aij();
+          break;
+      case 9:
+          array();
+          break;
+      case 10:
+          azero();
+          break;
+      case 11:
+          backlash();
+          break;
+      case 12:
+          bcustom();
+          break;
+      case 13:
+          benable();
+          break;
+      case 14:
+          build();
+          break;
+      case 15:
+          cdate();
+          break;
+      case 16:
+          cnts();
+          break;
+      case 17:
+          customa();
+          break;
+      case 18:
+          customb();
+          break;
+      case 19:
+          dack();
+          break;
+      case 20:
+          dump();
+          break;
+      case 21:
+          ensync();
+          break;
+      case 22:
+          epolarity();
+          break;
+      case 23:
+          error();
+          break;
+      case 24:
+          halt();
+          break;
+      case 25:
+          here();
+          break;
+      case 26:
+          home();
+          break;
+      case 27:
+          info();
+          break;
+      case 28:
+          joystick();
+          break;
+      case 29:
+          jsspd();
+          break;
+      case 30:
+          kadc();
+          break;
+      case 31:
+          kd();
+          break;
+      case 32:
+          ki();
+          break;
+      case 33:
+          kp();
+          break;
+      case 34:
+          lcd();
+          break;
+      case 35:
+          led();
+          break;
+      case 36:
+          lladdr();
+          break;
+      case 37:
+          load();
+          break;
+      case 38:
+          lock();
+          break;
+      case 39:
+          lockrg();
+          break;
+      case 40:
+          lockset();
+          break;
+      case 41:
+          maintain();
+          break;
+      case 42:
+          motctrl();
+          break;
+      case 43:
+          move();
+          break;
+      case 44:
+          movrel();
+          break;
+      case 45:
+          pcros();
+          break;
+      case 46:
+          pedal();
+          break;
+      case 47:
+          rbmode();
+          break;
+      case 48:
+          rdadc();
+          break;
+      case 49:
+          rdsbyte();
+          break;
+      case 50:
+          rdstat();
+          break;
+      case 51:
+          relock();
+          break;
+      case 52:
+          reset();
+          break;
+      case 53:
+          rt();
+          break;
+      case 54:
+          runaway();
+          break;
+      case 55:
+          saveset();
+          break;
+      case 56:
+          savepos();
+          break;
+      case 57:
+          scan();
+          break;
+      case 58:
+          scanr();
+          break;
+      case 59:
+          scanv();
+          break;
+      case 60:
+          secure();
+          break;
+      case 61:
+          sethome();
+          break;
+      case 62:
+          setlow();
+          break;
+      case 63:
+          setup();
+          break;
+      case 64:
+          si();
+          break;
+      case 65:
+          speed();
+          break;
+      case 66:
+          spin();
+          break;
+      case 67:
+          status();
+          break;
+      case 68:
+          stopbits();
+          break;
+      case 69:
+          ttl();
+          break;
+      case 70:
+          um();
+          break;
+      case 71:
+          units();
+          break;
+      case 72:
+          unlock();
+          break;
+      case 73:
+          vb();
+          break;
+      case 74:
+          vector();
+          break;
+      case 75:
+          version();
+          break;
+      case 76:
+          wait();
+          break;
+      case 77:
+          where();
+          break;
+      case 78:
+          who();
+          break;
+      case 79:
+          wrdac();
+          break;
+      case 80:
+          zero();
+          break;
+      case 81:
+          z2b();
+          break;
+      case 82:
+          zs();
+          break;
+
+  }
 }
 
 

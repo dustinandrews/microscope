@@ -13,9 +13,11 @@ AsiMS2000 AsiMS2000;
                  
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  Serial1.begin(9600);
   Serial.println("init complete");
-  AsiMS2000.displayCommands();
+  Serial1.println("serial1");
+  //AsiMS2000.displayCommands();
 }
 
 void loop()

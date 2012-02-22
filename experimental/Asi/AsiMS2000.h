@@ -14,19 +14,22 @@
 #define NUMCOMMANDS 83
 class AsiMS2000
 {    
+  public:
+        AsiMS2000();
+        void checkSerial();
+        void displayCommands();
   private: 
         int _numCommands;
         static char* _commands[NUMCOMMANDS];
         static char* _shortcuts[NUMCOMMANDS];
-  public:
-        AsiMS2000();
+        void serialPrint(char*);
+        void serialPrintln(char *);
         void interpretCommand(char commandBuffer[], int bufferPos);
-        int confirmSpaceChar(char commandBuffer[]);
         void bufferOverunError(char commandBuffer[]);
         void clearCommandBuffer(char commandBuffer[]);
-        void displayCommands();
         void returnErrorToSerial(int errornum);
-        void checkSerial();
+        int getCommandNum(String c);
+        void selectCommand(int commandNum);
 	void accel();
 	void aalign();
 	void afcont();

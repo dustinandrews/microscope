@@ -2,9 +2,30 @@
  * By Dustin Andrews, Frank Luecke, David Luecke and Allen Burnham, 2012
  * This work is licensed under a Creative Commons Attribution 3.0 Unported License.
  * http://creativecommons.org/licenses/by/3.0/
+ * This program is design to run on Arduino MEGA
+ * Code available from https://github.com/dustinandrews/microscope
  */
-//Pin assignments
+/////////////
+//Libraries//
+/////////////
+
+// The TimerThree library is required.
+// Get it from http://www.arduino.cc/playground/Code/Timer1
+// Unpack the files someplace then add TimerThree.cpp and TimerThree.h from the 
+// Sketch->"Add File" menu.
+#include "TimerThree.h"
+
+/////////////////////////
+//Serial Debug Messages//
+/////////////////////////
+#define DEBUG true
+
+///////////////////
+//Pin assignments//
+///////////////////
 //D0 and D1 are reserved for serial Communication with the PC
+
+//Motors are driven by the EasyDriver board: http://www.sparkfun.com/products/10267
 const int motorA_dir  = 2;
 const int motorA_step = 3;
 const int motorB_dir  = 4;
@@ -16,21 +37,29 @@ const int gnd_resetSteppers = 8;//ground to reset
 const int disableSteppers = 9; //Enable on the A3967SLB is "Active Low", so the name is changed to make programming clearers.
 const int gnd_sleepSteppers = 10;//ground to set boards to sleep mode.
 
-
-
 const int motorA_in = A0;
 const int motorB_in = A1;
 const int motorC_in = A2;
 
-//programming constants
-int dead_zone = 30; //number of units out of 1024 that counts as centered;
-int pot_center = 512;
-int numInputPots = 3;
+/////////////////////////
+//programming constants//
+/////////////////////////
+const int dead_zone = 0; //number of units out of 1024 that counts as centered;
+const int pot_center = 512;
+const int numInputPots = 3;
 
-//timing variables
-int step_delay = 1000; //delay between steps.
-int input_delay = 1000; //delay between reading inputs.
-//int base_speed = 130000;
+/////////////////////////////////////////
+//Timing Constants and shared variables//
+/////////////////////////////////////////
+const int32_t intPerSec = 1500;//number of interupts proccessed per second.
+const int input_delay = 500; //delay between reading inputs in microseconds.
+long perSecRatio = 0;//set in setup routine based on interupts per sec.
+
+//Variables to pass motor timing information into interupt routine.
+volatile int ma_persec = 0;
+volatile int mb_persec = 0;
+volatile int mc_persec = 0;
+volatile int interupts = 0;
 
 
 void setup() 
@@ -69,6 +98,13 @@ void setup()
   digitalWrite(gnd_resetSteppers, LOW);
   delayMicroseconds(1);
   digitalWrite(gnd_resetSteppers, HIGH);
+  
+  //setup the interupt routine.
+  perSecRatio = ((512L * 512L) / intPerSec)+1;//+1 to make up for not doing floating point calculations.
+  int32_t timerFactor = 1000000 / intPerSec;  
+  Timer3.initialize(timerFactor);
+  Timer3.attachInterrupt(motorCallback);
+  
   Serial.begin(115200);
   Serial.println("Startup Complete.");
 }
@@ -79,27 +115,30 @@ void loop()
   static unsigned long lastInputTime = 0;
   static unsigned long lastOutputTime = 0;
   unsigned long time = 0;
-  static unsigned int iterations = 0;
-  iterations++;
+  int inputArray[3];
   
   time = millis();
-  int inputArray[3];
   if(time - lastInputTime > input_delay)
   {
     readInputs(inputArray);
+    if(DEBUG)
+    {
+      char buffer [50];
+      sprintf(buffer,"A:%d B:%d C:%d", inputArray[0],inputArray[1],inputArray[2]);
+      Serial.println(buffer);
+    }
+    
+    adjustInput(inputArray);
+    setMotorDirection(inputArray);
+    calculateMotorSpeeds(inputArray);
     lastInputTime = time; 
-    Serial.println(iterations);
-    iterations = 0;
   }
   
-
-  if(time - lastOutputTime > input_delay)
+  if(interupts >= intPerSec)
   {
-    runMotors(inputArray);
-    lastOutputTime = time;
+    interupts = 0;
   }
   
-
 }
 
 void readInputs(int inputs[])
@@ -109,27 +148,54 @@ void readInputs(int inputs[])
   inputs[2] = analogRead(motorC_in);
 }
 
-
-void runMotors(int inputs[])
+void adjustInput(int inputs[])
 {
-   int posA = inputs[0] - pot_center;
-   int posB = inputs[1] - pot_center;
-   int posC = inputs[2] - pot_center;
+   inputs[0] = inputs[0] - pot_center;
+   inputs[1] = inputs[1] - pot_center;
+   inputs[2] = inputs[2] - pot_center;
+}
 
-   setDir(posA, motorA_dir);
-   setDir(posB, motorB_dir);
-   setDir(posC, motorC_dir);
-   
-   posA = abs(posA);
-   posB = abs(posB);
-   posC = abs(posC);
-   
-   setPwmSpeed(posA, motorA_step);
-   setPwmSpeed(posB, motorB_step);
-   setPwmSpeed(posC, motorC_step);
-   
-   
-   Serial.println("runmotor");
+void setMotorDirection(int inputs[])
+{
+   setDir(inputs[0], motorA_dir);
+   setDir(inputs[1], motorB_dir);
+   setDir(inputs[2], motorC_dir);
+}
+
+void calculateMotorSpeeds(int inputs[])
+{
+  //square the input to get a good input curve.
+  ma_persec = abs(((long)inputs[0] * (long)inputs[0]) / perSecRatio);
+  mb_persec = abs(((long)inputs[1] * (long)inputs[1]) / perSecRatio);
+  mc_persec = abs(((long)inputs[2] * (long)inputs[2]) / perSecRatio);
+}
+
+
+void motorCallback()
+{
+    digitalWrite(motorA_step, LOW);
+    digitalWrite(motorB_step, LOW);
+    digitalWrite(motorC_step, LOW);
+    
+    interupts++;
+    long ma_mod = intPerSec/ma_persec;
+    long mb_mod = intPerSec/mb_persec;
+    long mc_mod = intPerSec/mc_persec;
+    
+    if(ma_persec > 0 && interupts % ma_mod == 0)
+    {
+      digitalWrite(motorA_step, HIGH);    
+    }
+    
+    if(mb_persec > 0 && interupts % mb_mod == 0)
+    {
+      digitalWrite(motorB_step, HIGH);
+    }
+    
+    if(mb_persec > 0 && interupts % mc_mod == 0)
+    {
+      digitalWrite(motorC_step, HIGH);
+    }    
 }
 
 void setDir(int pos, int pin)
@@ -144,20 +210,4 @@ void setDir(int pos, int pin)
    }
 }
 
-void setPwmSpeed(int pos, int pin)
-{
-   char buffer [50];
-   if(pos < dead_zone)
-   {
-     analogWrite(pin, 0);
-     sprintf(buffer, "%d %d", pin, pos );
-     Serial.println(buffer);
-   }
-   else
-   {
-     pos = (pos - 3) / 2; //input can go to 512 but PWM is 0-255.
-     analogWrite(pin, pos); //analog read goes to 1024. It's already divided in half.
-     sprintf(buffer, "%d %d", pin, pos);
-     Serial.println(buffer);     
-   }
-}
+
