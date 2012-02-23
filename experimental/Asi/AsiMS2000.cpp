@@ -15,7 +15,6 @@
 AsiMS2000::AsiMS2000()
 {
   _numCommands = NUMCOMMANDS;
-
 }
 
 void AsiMS2000::checkSerial()
@@ -27,10 +26,8 @@ void AsiMS2000::checkSerial()
   {
     inByte = Serial1.read();
     int x = (int)inByte;
-    char buffer [20];
-    sprintf(buffer, "(%d)", x);
-    Serial.print(buffer);
-    Serial.print(inByte, BYTE); 
+    inputPrint(x);
+ 
     if(bufferPos > BUFFERSIZE)
     {
       bufferPos = 0;
@@ -42,9 +39,9 @@ void AsiMS2000::checkSerial()
     //check for <CR> or | since arduino env can't send CR.
     if(inByte == 13 || inByte == 124)
     {
-      Serial.println("");
       commandBuffer[bufferPos]  = '\0';
-      interpretCommand(commandBuffer, bufferPos);
+      inputPrintln(commandBuffer);
+      interpretCommand(commandBuffer);
       bufferPos =0;
     }
     else if(inByte == 10 || inByte == 27)//backspace or escape
@@ -60,10 +57,10 @@ void AsiMS2000::checkSerial()
 }
 
 
-void AsiMS2000::interpretCommand(char commandBuffer[], int bufferPos)
+void AsiMS2000::interpretCommand(char commandBuffer[])
 {
-    Serial.println("interpretting");
-    Serial.println(commandBuffer);
+    debugPrintln("Command Buffer:");
+    debugPrintln(commandBuffer);
     String c = String(commandBuffer);
     int s = c.indexOf(' ');
     clearCommandBuffer(commandBuffer);
@@ -72,6 +69,7 @@ void AsiMS2000::interpretCommand(char commandBuffer[], int bufferPos)
     if(s > 0)
     {
       base = c.substring(0,s);
+      _args = c.substring(s);
     }
     else
     {
@@ -81,9 +79,8 @@ void AsiMS2000::interpretCommand(char commandBuffer[], int bufferPos)
     int commandNum = getCommandNum(base);
     if(commandNum > -1)
     {
-      Serial.print(c);
-      Serial.print(" detected command number: ");
-      Serial.println(commandNum);
+      debugPrintln("command");
+      debugPrintln(_commands[commandNum]);
       selectCommand(commandNum);
     }
 }
@@ -91,15 +88,19 @@ void AsiMS2000::interpretCommand(char commandBuffer[], int bufferPos)
 
 int AsiMS2000::getCommandNum(String c)
 {
-  Serial.println("checking for command.");
   for(int i = 0; i < _numCommands; i++)
   {
     if( c.equalsIgnoreCase(_commands[i]) || c.equalsIgnoreCase(_shortcuts[i]) )
     {
+      char buffer [100];
+      sprintf(buffer, "%d: %s, %s", i, _commands[i], _shortcuts[i]);
+      debugPrintln(buffer);
       return i;
     }     
   }
-  returnErrorToSerial(-1);//unknown command
+  //TODO: one of the commands has a second alias, check for that special case here.
+  
+  returnErrorToSerial(-1);//unknown command sent if lookup fails.
   return -1;
 }
 
@@ -123,7 +124,7 @@ void AsiMS2000::displayCommands()
   for(int i = 0; i < _numCommands; i++)
   {
     sprintf(buffer, "%s => %s", _commands[i], _shortcuts[i]);
-    Serial.println(buffer);
+    debugPrintln(buffer);
   }
 }
 
@@ -131,25 +132,56 @@ void AsiMS2000::displayCommands()
 //In order to easily switch serial ports, run all data through subroutines
 void AsiMS2000::serialPrint(char* data)
 {
-  Serial.print(">");
-  Serial.println(data);
+  outputPrintln(data);
   Serial1.print(data);
 }
 
 void AsiMS2000::serialPrintln(char* data)
 {
-  Serial.print(">");
-  Serial.println(data);
+  outputPrintln(data);
   Serial1.println(data);
 }
 
-void AsiMS2000::returnErrorToSerial(int errornum)
+void AsiMS2000::debugPrintln(char* data)
 {
-  serialPrint(":N");
-  char e [1] = {errornum};
-  serialPrintln(e);
+  Serial.print("DEBUG:[");
+  Serial.print(data);
+  Serial.println("]");
 }
 
+void AsiMS2000::outputPrintln(char * data)
+{
+  Serial.print("Out>");
+  Serial.println(data);
+}
+
+void AsiMS2000::inputPrint(byte data)
+{
+  Serial.print("(");
+  Serial.print(data);
+  Serial.print(")");
+}
+
+void AsiMS2000::inputPrintln(char * data)
+{
+  Serial.print("(");
+  Serial.print(data);
+  Serial.println(")"); 
+}
+
+
+void AsiMS2000::returnErrorToSerial(int errornum)
+{
+  char buffer [5];
+  sprintf(buffer, ":E%d", errornum);
+  serialPrintln(buffer);
+}
+
+/* These are the commands from the protocols. The program looks up the command
+ * and runs the desired method from below. The methods 
+ * 
+ *
+ */
 void AsiMS2000::accel()
 {
     returnErrorToSerial(-6);
@@ -251,17 +283,13 @@ void AsiMS2000::bcustom()
 
 void AsiMS2000::benable()
 {
-    returnErrorToSerial(-6);
-
-
+  returnErrorToSerial(-6);
 }
 
 
 void AsiMS2000::build()
 {
-    returnErrorToSerial(-6);
-
-
+        serialPrintln("Arduino Emulated ASI 2/23/2012");
 }
 
 
@@ -805,6 +833,10 @@ void AsiMS2000::zs()
 
 void AsiMS2000::selectCommand(int commandNum)
 {
+  char buffer[12];
+  sprintf(buffer, "Command %d", commandNum);
+  debugPrintln(buffer);
+  
   switch(commandNum)
   {
       case 0:

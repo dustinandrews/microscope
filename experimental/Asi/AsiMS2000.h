@@ -12,6 +12,7 @@
 #include "WProgram.h"
 
 #define NUMCOMMANDS 83
+#define BUFFERLEN 128
 class AsiMS2000
 {    
   public:
@@ -22,14 +23,23 @@ class AsiMS2000
         int _numCommands;
         static char* _commands[NUMCOMMANDS];
         static char* _shortcuts[NUMCOMMANDS];
+        String _args;
         void serialPrint(char*);
         void serialPrintln(char *);
-        void interpretCommand(char commandBuffer[], int bufferPos);
+        void interpretCommand(char commandBuffer[]);
         void bufferOverunError(char commandBuffer[]);
         void clearCommandBuffer(char commandBuffer[]);
         void returnErrorToSerial(int errornum);
         int getCommandNum(String c);
         void selectCommand(int commandNum);
+        void debugPrintln(char* data);
+        void outputPrintln(char* data);
+        void inputPrint(byte data);
+        void inputPrintln(char * data);
+
+/////////////////////
+//Protocol commands//
+/////////////////////
 	void accel();
 	void aalign();
 	void afcont();
