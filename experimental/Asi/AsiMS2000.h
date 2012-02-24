@@ -24,8 +24,11 @@ class AsiMS2000
         static char* _commands[NUMCOMMANDS];
         static char* _shortcuts[NUMCOMMANDS];
         String _args;
+        float _x,_y,_z;//axis positions.
         void serialPrint(char*);
+        void serialPrint(String data);
         void serialPrintln(char *);
+        void serialPrintln(String data);
         void interpretCommand(char commandBuffer[]);
         void bufferOverunError(char commandBuffer[]);
         void clearCommandBuffer(char commandBuffer[]);

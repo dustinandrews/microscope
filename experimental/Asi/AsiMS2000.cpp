@@ -15,6 +15,9 @@
 AsiMS2000::AsiMS2000()
 {
   _numCommands = NUMCOMMANDS;
+  _x = 1.01f;
+  _y = 2.002f;
+  _z = 3.0003f;
 }
 
 void AsiMS2000::checkSerial()
@@ -70,6 +73,7 @@ void AsiMS2000::interpretCommand(char commandBuffer[])
     {
       base = c.substring(0,s);
       _args = c.substring(s);
+      _args = _args.toUpperCase();
     }
     else
     {
@@ -130,10 +134,24 @@ void AsiMS2000::displayCommands()
 
 
 //In order to easily switch serial ports, run all data through subroutines
+void AsiMS2000::serialPrint(String data)
+{
+   char buffer [data.length()];
+   data.toCharArray(buffer, data.length());
+   serialPrint(buffer);
+}
+
 void AsiMS2000::serialPrint(char* data)
 {
   outputPrintln(data);
   Serial1.print(data);
+}
+
+void AsiMS2000::serialPrintln(String data)
+{
+   char buffer [data.length()];
+   data.toCharArray(buffer, data.length());
+   serialPrintln(buffer);
 }
 
 void AsiMS2000::serialPrintln(char* data)
@@ -176,6 +194,7 @@ void AsiMS2000::returnErrorToSerial(int errornum)
   sprintf(buffer, ":E%d", errornum);
   serialPrintln(buffer);
 }
+
 
 /* These are the commands from the protocols. The program looks up the command
  * and runs the desired method from below. The methods 
@@ -786,9 +805,41 @@ void AsiMS2000::wait()
 
 void AsiMS2000::where()
 {
-    returnErrorToSerial(-6);
+    int isX = false, isY = false, isZ = false;
+    int arglen = _args.length();
+    if(arglen != 0)
+    {
+      isX = true; isY = true; isZ = true;
+    }
 
-
+    for(int i = 0; i < arglen; i++)
+    {
+       if(_args[i] == 'X') {isX = true;} 
+       if(_args[i] == 'Y') {isY = true;}
+       if(_args[i] == 'Z') {isZ = true;}
+    }    
+    
+    String response = ":A ";
+    char buffer [25];
+    if(isX) 
+    {
+      dtostrf(_x,1,4,buffer);
+      response.concat(String(buffer) + " ");
+    }
+  
+    if(isY) 
+    {
+      dtostrf(_y,1,4,buffer);
+      response.concat(String(buffer) + " ");
+    }
+    
+    if(isZ) 
+    {
+      dtostrf(_z,1,4,buffer);
+      response.concat(String(buffer));
+    }
+  
+    serialPrintln(response);
 }
 
 
