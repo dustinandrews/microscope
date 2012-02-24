@@ -18,6 +18,11 @@ AsiMS2000::AsiMS2000()
   _x = 1.01f;
   _y = 2.002f;
   _z = 3.0003f;
+  
+  //unit multipliers. See UM command in protocol Docs.
+  _ux = 10000;
+  _uy = 10000;
+  _uz = 10000;
 }
 
 void AsiMS2000::checkSerial()
@@ -130,6 +135,42 @@ void AsiMS2000::displayCommands()
     sprintf(buffer, "%s => %s", _commands[i], _shortcuts[i]);
     debugPrintln(buffer);
   }
+}
+
+void AsiMS2000::parseXYZArgs(int parseArray[])
+{
+  parseArray[0] = atoi(GetArgumentValue('X'));
+  parseArray[1] = atoi(GetArgumentValue('Y'));
+  parseArray[2] = atoi(GetArgumentValue('Z'));
+}
+
+void AsiMS2000::parseXYZArgs(float parseArray[])
+{
+  parseArray[0] = atof(GetArgumentValue('X'));
+  parseArray[1] = atof(GetArgumentValue('Y'));
+  parseArray[2] = atof(GetArgumentValue('Z'));    
+}
+
+char* AsiMS2000::GetArgumentValue(char arg)
+{
+  int argIndex = _args.indexOf(arg);
+  if(argIndex == -1)
+  {
+   return "0";
+  }
+
+  char buffer[20];
+  int bIndex = 0;
+  while(_args.charAt(argIndex) != ' ' && argIndex < _args.length())
+  {
+   argIndex++;
+   if(_args.charAt(argIndex) != '=')
+   {
+     buffer[bIndex++] = _args.charAt(argIndex);
+   }   
+  }
+  buffer[bIndex] = '\0';
+  return buffer;
 }
 
 
@@ -749,9 +790,16 @@ void AsiMS2000::ttl()
 
 void AsiMS2000::um()
 {
-    returnErrorToSerial(-6);
-
-
+    debugPrintln("running UM");
+    int units[3];
+    parseXYZArgs(units);
+    char buffer [20];
+    sprintf(buffer, "unit mulitpliers set x=%d y=%d z=%d", units[0], units[1], units[2]);
+    debugPrintln(buffer);
+    _ux = units[0];
+    _uy = units[1];
+    _uz = units[2];
+    outputPrintln(":A");
 }
 
 
@@ -807,7 +855,7 @@ void AsiMS2000::where()
 {
     int isX = false, isY = false, isZ = false;
     int arglen = _args.length();
-    if(arglen != 0)
+    if(arglen == 0)
     {
       isX = true; isY = true; isZ = true;
     }

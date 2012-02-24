@@ -25,6 +25,7 @@ class AsiMS2000
         static char* _shortcuts[NUMCOMMANDS];
         String _args;
         float _x,_y,_z;//axis positions.
+        int _ux, _uy, _uz; //axis unit mutlipliers.       
         void serialPrint(char*);
         void serialPrint(String data);
         void serialPrintln(char *);
@@ -39,7 +40,10 @@ class AsiMS2000
         void outputPrintln(char* data);
         void inputPrint(byte data);
         void inputPrintln(char * data);
-
+        void parseXYZArgs(int parseArray[]);
+        void parseXYZArgs(float parseArray[]);
+        char* GetArgumentValue(char arg);
+        
 /////////////////////
 //Protocol commands//
 /////////////////////
