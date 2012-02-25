@@ -21,11 +21,11 @@ class AsiMS2000
         void displayCommands();
   private: 
         int _numCommands;
+        int _isQuery;
+        int _isAxis[3];
         static char* _commands[NUMCOMMANDS];
         static char* _shortcuts[NUMCOMMANDS];
-        String _args;
-        float _x,_y,_z;//axis positions.
-        int _ux, _uy, _uz; //axis unit mutlipliers.       
+        String _args;       
         void serialPrint(char*);
         void serialPrint(String data);
         void serialPrintln(char *);
@@ -43,6 +43,8 @@ class AsiMS2000
         void parseXYZArgs(int parseArray[]);
         void parseXYZArgs(float parseArray[]);
         char* GetArgumentValue(char arg);
+        int isQueryCommand(String command);
+        void isAxisInCommand();
         
 /////////////////////
 //Protocol commands//

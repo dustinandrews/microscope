@@ -8,21 +8,19 @@
  */
 
 #include "AsiMS2000.h"
+#include "AsiSettings.h"
 //needs to be long enough to contain biggest command string.
 #define BUFFERSIZE 128
 
+AsiSettings AsiSettings;
 
 AsiMS2000::AsiMS2000()
 {
   _numCommands = NUMCOMMANDS;
-  _x = 1.01f;
-  _y = 2.002f;
-  _z = 3.0003f;
-  
-  //unit multipliers. See UM command in protocol Docs.
-  _ux = 10000;
-  _uy = 10000;
-  _uz = 10000;
+  _isQuery = false;
+  _isAxis[0] = false;
+  _isAxis[1] = false;
+  _isAxis[2] = false;
 }
 
 void AsiMS2000::checkSerial()
@@ -85,6 +83,8 @@ void AsiMS2000::interpretCommand(char commandBuffer[])
       base = c;
     }
     
+    _isQuery = isQueryCommand(c);
+    isAxisInCommand();
     int commandNum = getCommandNum(base);
     if(commandNum > -1)
     {
@@ -94,6 +94,35 @@ void AsiMS2000::interpretCommand(char commandBuffer[])
     }
 }
 
+void AsiMS2000::isAxisInCommand()
+{
+    debugPrintln("isAxisInCommand()");
+    _isAxis[0] = false;
+    _isAxis[1] = false;
+    _isAxis[2] = false;
+    
+    for(int i = 0; i < _args.length(); i++)
+    {
+       if(_args[i] == 'X') {_isAxis[0] = true;} 
+       if(_args[i] == 'Y') {_isAxis[1] = true;}
+       if(_args[i] == 'Z') {_isAxis[2] = true;}
+    }    
+    
+    
+}
+
+int AsiMS2000::isQueryCommand(String command)
+{
+  debugPrintln("isQueryCommand()");
+  for(int i = 0; i < command.length(); i++)
+  {
+    if(command.charAt(i) == '?')
+    {
+      return true;
+    }
+  }  
+  return false;
+}
 
 int AsiMS2000::getCommandNum(String c)
 {
@@ -216,16 +245,16 @@ void AsiMS2000::outputPrintln(char * data)
 
 void AsiMS2000::inputPrint(byte data)
 {
-  Serial.print("(");
-  Serial.print(data);
-  Serial.print(")");
+  //Serial.print("(");
+  //Serial.print(data);
+  //Serial.print(")");
 }
 
 void AsiMS2000::inputPrintln(char * data)
 {
-  Serial.print("(");
+  Serial.print("IN<");
   Serial.print(data);
-  Serial.println(")"); 
+  Serial.println(""); 
 }
 
 
@@ -349,7 +378,15 @@ void AsiMS2000::benable()
 
 void AsiMS2000::build()
 {
-        serialPrintln("Arduino Emulated ASI 2/23/2012");
+  if(_args.indexOf('X') > -1)
+  {
+    serialPrintln("STD_XYZ");
+    serialPrintln("Motor Axes: X Y Z");
+  }
+  else
+  {
+    serialPrintln("Build: 0.0.0.1");    
+  }
 }
 
 
@@ -790,16 +827,21 @@ void AsiMS2000::ttl()
 
 void AsiMS2000::um()
 {
-    debugPrintln("running UM");
+    if(_isQuery)
+    {
+      
+      return;
+    }
+    
     int units[3];
-    parseXYZArgs(units);
-    char buffer [20];
+    parseXYZArgs(units);      
+    char buffer [50];
     sprintf(buffer, "unit mulitpliers set x=%d y=%d z=%d", units[0], units[1], units[2]);
     debugPrintln(buffer);
-    _ux = units[0];
-    _uy = units[1];
-    _uz = units[2];
-    outputPrintln(":A");
+    if(units[0] != 0) {AsiSettings.unitMultiplier[0] = units[0];}
+    if(units[1] != 0) {AsiSettings.unitMultiplier[1] = units[1];}
+    if(units[2] != 0) {AsiSettings.unitMultiplier[3] = units[2];}
+    serialPrintln(":A");
 }
 
 
@@ -853,37 +895,35 @@ void AsiMS2000::wait()
 
 void AsiMS2000::where()
 {
-    int isX = false, isY = false, isZ = false;
+    debugPrintln("Running WHERE");
     int arglen = _args.length();
+    char buffer [25];
+    sprintf(buffer, "%d len", arglen);
+    debugPrintln(buffer);
     if(arglen == 0)
     {
-      isX = true; isY = true; isZ = true;
+      _isAxis[0] = true;
+      _isAxis[1] = true;
+      _isAxis[2] = true;
     }
-
-    for(int i = 0; i < arglen; i++)
-    {
-       if(_args[i] == 'X') {isX = true;} 
-       if(_args[i] == 'Y') {isY = true;}
-       if(_args[i] == 'Z') {isZ = true;}
-    }    
     
     String response = ":A ";
-    char buffer [25];
-    if(isX) 
+    //char buffer [25];
+    if(_isAxis[0]) 
     {
-      dtostrf(_x,1,4,buffer);
+      dtostrf(AsiSettings.currentPos[0],1,4,buffer);
       response.concat(String(buffer) + " ");
     }
   
-    if(isY) 
+    if(_isAxis[1]) 
     {
-      dtostrf(_y,1,4,buffer);
+      dtostrf(AsiSettings.currentPos[1],1,4,buffer);
       response.concat(String(buffer) + " ");
     }
     
-    if(isZ) 
+    if(_isAxis[2]) 
     {
-      dtostrf(_z,1,4,buffer);
+      dtostrf(AsiSettings.currentPos[2],1,4,buffer);
       response.concat(String(buffer));
     }
   

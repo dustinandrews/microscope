@@ -6,22 +6,17 @@
  * This program emulates the MFC-2000 ASI protocol described at http://www.asiimaging.com/ftp2asi/Manuals/MS2000%20Programming.pdf
  * Code available from https://github.com/dustinandrews/microscope
  */
+#include "AsiSettings.h"
 
-#include "AsiMS2000.h"
 
-
-AsiMS2000 AsiMS2000;
-                 
-void setup()
+AsiSettings::AsiSettings()
 {
-  Serial.begin(115200);
-  Serial1.begin(9600);
-  Serial.println("init complete");
-  //AsiMS2000.displayCommands();
+		
 }
 
-void loop()
-{
-  AsiMS2000.checkSerial();
-}
-
+////////////
+//Defaults//
+////////////
+float AsiSettings::currentPos[3] = {1.1, 2.02, 3.003};
+int AsiSettings::unitMultiplier[3] = {1000, 1000, 1000};
+int AsiSettings::wait[3] = {0, 0, 0};

@@ -7,21 +7,20 @@
  * Code available from https://github.com/dustinandrews/microscope
  */
 
-#include "AsiMS2000.h"
+#ifndef AsiSettings_h
+#define AsiSettings_h
+#include "WProgram.h"
 
-
-AsiMS2000 AsiMS2000;
-                 
-void setup()
+class AsiSettings
 {
-  Serial.begin(115200);
-  Serial1.begin(9600);
-  Serial.println("init complete");
-  //AsiMS2000.displayCommands();
-}
+	public:
+		AsiSettings();
+		//3 element arrays are are X,Y,Z
+		static float currentPos[3];
+		static int unitMultiplier[3];
+		static int wait[3];
+		
+};
 
-void loop()
-{
-  AsiMS2000.checkSerial();
-}
 
+#endif
