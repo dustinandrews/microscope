@@ -11,16 +11,32 @@
 #define AsiSettings_h
 #include "WProgram.h"
 
+struct AxisSettings {
+  int x;
+  int y;
+  int z;
+};
+
+struct AxisSettingsF {
+  float x;
+  float y;
+  float z;
+};
+
+
 class AsiSettings
 {
   public:
-    AsiSettings();
+    AsiSettings(); 
     //3 element arrays are are X,Y,Z
-    static float currentPos[3];
+    //AxisSettings newSetting;
+    AxisSettingsF currentPos;
     static float maxSpeed[3];
     static int unitMultiplier[3];
     static int wait[3];
-		
+  private:
+    void setSettings(AxisSettings *s, int x, int y, int z);
+    void setSettings(AxisSettingsF *s, float x, float y, float z);		
 };
 
 

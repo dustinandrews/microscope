@@ -11,14 +11,29 @@
 
 AsiSettings::AsiSettings()
 {
-		
+  setSettings(&currentPos, 1.1, 2.02, 3.003);  
 }
-//TODO: add read-write for settings to the EEPROM
+
+void AsiSettings::setSettings(AxisSettings *s, int x, int y, int z)
+{
+  s->x = x;
+  s->y = y;
+  s->z = z;
+}
+
+void AsiSettings::setSettings(AxisSettingsF *s, float x, float y, float z)
+{
+  s->x = x;
+  s->y = y;
+  s->z = z;
+}
+
+
 
 ////////////
 //Defaults//
 ////////////
-float AsiSettings::currentPos[3] = {1.1, 2.02, 3.003};
+//float AsiSettings::currentPos[3] = {1.1, 2.02, 3.003};
 float AsiSettings::maxSpeed[3] = {7.1, 7.2, 7.3};
 int AsiSettings::unitMultiplier[3] = {1000, 1000, 1000};
 int AsiSettings::wait[3] = {0, 0, 0};

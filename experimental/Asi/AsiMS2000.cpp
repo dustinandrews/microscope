@@ -23,6 +23,7 @@ AsiMS2000::AsiMS2000()
   _isAxis[2] = false;
 }
 
+
 void AsiMS2000::checkSerial()
 {
   int inByte = 0;
@@ -998,20 +999,21 @@ void AsiMS2000::where()
     //char buffer [25];
     if(_isAxis[0]) 
     {
-      dtostrf(AsiSettings.currentPos[0],1,4,buffer);
+      
+      dtostrf(AsiSettings.currentPos.x,1,4,buffer);
       response.concat(String(buffer) + " ");
     }
   
     if(_isAxis[1]) 
     {
-      dtostrf(AsiSettings.currentPos[1],1,4,buffer);
+      dtostrf(AsiSettings.currentPos.y,1,4,buffer);
       response.concat(String(buffer) + " ");
     }
     
     if(_isAxis[2]) 
     {
-      dtostrf(AsiSettings.currentPos[2],1,4,buffer);
-      response.concat(String(buffer));
+      dtostrf(AsiSettings.currentPos.z,1,4,buffer);
+      response.concat(String(buffer) + " ");
     }
   
     serialPrintln(response);
