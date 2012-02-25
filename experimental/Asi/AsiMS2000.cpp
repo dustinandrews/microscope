@@ -66,8 +66,6 @@ void AsiMS2000::checkSerial()
 
 void AsiMS2000::interpretCommand(char commandBuffer[])
 {
-    debugPrintln("Command Buffer:");
-    debugPrintln(commandBuffer);
     String c = String(commandBuffer);
     int s = c.indexOf(' ');
     clearCommandBuffer(commandBuffer);
@@ -89,8 +87,6 @@ void AsiMS2000::interpretCommand(char commandBuffer[])
     int commandNum = getCommandNum(base);
     if(commandNum > -1)
     {
-      debugPrintln("command");
-      debugPrintln(_commands[commandNum]);
       selectCommand(commandNum);
     }
 }
@@ -186,9 +182,9 @@ void AsiMS2000::settingsSet(AxisSettings *settings)
     char buffer [50];
     sprintf(buffer, "settings x=%d y=%d z=%d", units.x, units.y, units.z);
     debugPrintln(buffer);
-    if(_isAxis.x) {settings->x = units.x; debugPrintln("set X");}
-    if(_isAxis.y) {settings->y = units.y; debugPrintln("set Y");}
-    if(_isAxis.z) {settings->z = units.z; debugPrintln("set Z");}
+    if(_isAxis.x) {settings->x = units.x;}
+    if(_isAxis.y) {settings->y = units.y;}
+    if(_isAxis.z) {settings->z = units.z;}
     serialPrintln(":A");
 }
 
@@ -199,9 +195,9 @@ void AsiMS2000::settingsSet(AxisSettingsF *settings)
     char buffer [50];
     sprintf(buffer, "settings x=%d y=%d z=%d", units.x, units.y, units.z);
     debugPrintln(buffer);
-    if(_isAxis.x) {settings->x = units.x; debugPrintln("set X");}
-    if(_isAxis.y) {settings->y = units.y; debugPrintln("set Y");}
-    if(_isAxis.z) {settings->z = units.z; debugPrintln("set Z");}
+    if(_isAxis.x) {settings->x = units.x;}
+    if(_isAxis.y) {settings->y = units.y;}
+    if(_isAxis.z) {settings->z = units.z;}
     serialPrintln(":A");
 }
 
@@ -348,6 +344,30 @@ void AsiMS2000::returnErrorToSerial(int errornum)
 }
 
 
+void AsiMS2000::getSetCommand(AxisSettings *setting)
+{
+    if(_isQuery)
+    {
+      settingsQuery((*setting));      
+    }
+    else
+    {
+      settingsSet(setting);
+    }
+}
+
+void AsiMS2000::getSetCommand(AxisSettingsF *setting)
+{
+    if(_isQuery)
+    {
+      settingsQuery((*setting));      
+    }
+    else
+    {
+      settingsSet(setting);
+    }
+}
+
 /* These are the commands from the protocols. The program looks up the command
  * and runs the desired method from below. The methods 
  * 
@@ -438,9 +458,7 @@ void AsiMS2000::azero()
 
 void AsiMS2000::backlash()
 {
-    returnErrorToSerial(-6);
-
-
+      getSetCommand(&AsiSettings.backlash);
 }
 
 
@@ -474,9 +492,7 @@ void AsiMS2000::build()
 
 void AsiMS2000::cdate()
 {
-    returnErrorToSerial(-6);
-
-
+  serialPrintln("2012-02-25 15:30:00");//update for revisions. Does Arduino have a macro for this?
 }
 
 
@@ -538,9 +554,7 @@ void AsiMS2000::epolarity()
 
 void AsiMS2000::error()
 {
-    returnErrorToSerial(-6);
-
-
+      getSetCommand(&AsiSettings.error);
 }
 
 
@@ -714,9 +728,7 @@ void AsiMS2000::movrel()
 
 void AsiMS2000::pcros()
 {
-    returnErrorToSerial(-6);
-
-
+      getSetCommand(&AsiSettings.pcros);
 }
 
 
@@ -850,17 +862,13 @@ void AsiMS2000::sethome()
 
 void AsiMS2000::setlow()
 {
-    returnErrorToSerial(-6);
-
-
+    getSetCommand(&AsiSettings.setlow);
 }
 
 
 void AsiMS2000::setup()
 {
-    returnErrorToSerial(-6);
-
-
+    getSetCommand(&AsiSettings.setup);
 }
 
 
@@ -874,15 +882,9 @@ void AsiMS2000::si()
 
 void AsiMS2000::speed()
 {
-  if(_isQuery)
-    {
-      settingsQuery(AsiSettings.maxSpeed);      
-    }
-    else
-    {
-      settingsSet(&AsiSettings.maxSpeed);
-    }
+  getSetCommand(&AsiSettings.maxSpeed); 
 }
+
 
 
 void AsiMS2000::spin()
@@ -915,14 +917,7 @@ void AsiMS2000::ttl()
 
 void AsiMS2000::um()
 {
-    if(_isQuery)
-    {
-      settingsQuery(AsiSettings.unitMultiplier);      
-    }
-    else
-    {
-      settingsSet(&AsiSettings.unitMultiplier);
-    }
+    getSetCommand(&AsiSettings.unitMultiplier);
 }
 
 
@@ -960,34 +955,20 @@ void AsiMS2000::vector()
 
 void AsiMS2000::version()
 {
-    returnErrorToSerial(-6);
-
-
+  serialPrintln(":A Ardunio Emulator 0.0.1");
 }
 
 
 void AsiMS2000::wait()
 {
-    if(_isQuery)
-    {
-      settingsQuery(AsiSettings.wait);      
-    }
-    else
-    {
-      settingsSet(&AsiSettings.wait);
-    }
-
-
+  getSetCommand(&AsiSettings.wait);    
 }
 
 
 void AsiMS2000::where()
 {
-    debugPrintln("Running WHERE");
     int arglen = _args.length();
     char buffer [25];
-    sprintf(buffer, "%d len", arglen);
-    debugPrintln(buffer);
     if(arglen == 0)
     {
       _isAxis.x = true;
@@ -1054,9 +1035,7 @@ void AsiMS2000::z2b()
 
 void AsiMS2000::zs()
 {
-    returnErrorToSerial(-6);
-
-
+  getSetCommand(&AsiSettings.zs);
 }
 
 void AsiMS2000::selectCommand(int commandNum)

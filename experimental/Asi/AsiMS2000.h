@@ -49,7 +49,9 @@ class AsiMS2000
         void settingsQuery(AxisSettings settings);
         void settingsQuery(AxisSettingsF settings);
         void settingsSet(AxisSettings *settings);
-        void settingsSet(AxisSettingsF *settings);        
+        void settingsSet(AxisSettingsF *settings);
+        void getSetCommand(AxisSettings *settings);
+        void getSetCommand(AxisSettingsF *settings);
 /////////////////////
 //Protocol commands//
 /////////////////////

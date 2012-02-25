@@ -15,6 +15,13 @@ AsiSettings::AsiSettings()
   setSettings(&maxSpeed, 7.1, 7.2, 7.3); 
   setSettings(&unitMultiplier, 1000, 1000, 1000);
   setSettings(&wait, 0,0,0);
+  setSettings(&backlash, 0,0,0);
+  setSettings(&error, 0,0,0);
+  setSettings(&pcros, 0,0,0); 
+  setSettings(&accel, 50,50,50);
+  setSettings(&setlow, 0,0,0);
+  setSettings(&setup, 100,100,100); 
+  setSettings(&zs, 0,0,0); 
 }
 
 void AsiSettings::setSettings(AxisSettings *s, int x, int y, int z)

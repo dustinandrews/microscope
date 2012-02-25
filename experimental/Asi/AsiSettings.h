@@ -28,12 +28,17 @@ class AsiSettings
 {
   public:
     AsiSettings(); 
-    //3 element arrays are are X,Y,Z
-    //AxisSettings newSetting;
     AxisSettingsF currentPos;
     AxisSettingsF maxSpeed;
+    AxisSettingsF backlash;
+    AxisSettingsF error;
+    AxisSettingsF pcros;
+    AxisSettingsF setlow;
+    AxisSettingsF setup;
+    AxisSettings accel;
     AxisSettings unitMultiplier;
     AxisSettings wait;
+    AxisSettings zs;
   private:
     void setSettings(AxisSettings *s, int x, int y, int z);
     void setSettings(AxisSettingsF *s, float x, float y, float z);		
