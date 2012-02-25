@@ -105,9 +105,7 @@ void AsiMS2000::isAxisInCommand()
        if(_args[i] == 'X') {_isAxis[0] = true;} 
        if(_args[i] == 'Y') {_isAxis[1] = true;}
        if(_args[i] == 'Z') {_isAxis[2] = true;}
-    }    
-    
-    
+     }           
 }
 
 int AsiMS2000::isQueryCommand(String command)
@@ -918,7 +916,14 @@ void AsiMS2000::version()
 
 void AsiMS2000::wait()
 {
-    returnErrorToSerial(-6);
+    if(_isQuery)
+    {
+      settingsQuery(AsiSettings.wait);      
+    }
+    else
+    {
+      settingsSet(AsiSettings.wait);
+    }
 
 
 }
