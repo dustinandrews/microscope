@@ -96,7 +96,6 @@ void AsiMS2000::interpretCommand(char commandBuffer[])
 
 void AsiMS2000::isAxisInCommand()
 {
-    debugPrintln("isAxisInCommand()");
     _isAxis[0] = false;
     _isAxis[1] = false;
     _isAxis[2] = false;
@@ -113,7 +112,6 @@ void AsiMS2000::isAxisInCommand()
 
 int AsiMS2000::isQueryCommand(String command)
 {
-  debugPrintln("isQueryCommand()");
   for(int i = 0; i < command.length(); i++)
   {
     if(command.charAt(i) == '?')
@@ -123,6 +121,47 @@ int AsiMS2000::isQueryCommand(String command)
   }  
   return false;
 }
+
+void AsiMS2000::settingsQuery(int setting[])
+{
+      String reply = "A: ";
+      if(_isAxis[0]) 
+      {
+        reply += "X=";
+        reply += setting[0];
+        reply += " ";
+      }
+      
+      if(_isAxis[1]) 
+      {
+        reply += "Y=";
+        reply += setting[1];
+        reply += " ";
+      }
+      
+      if(_isAxis[2]) 
+      {
+        reply += "Z=";
+        reply += setting[2];
+        reply += " ";
+      }
+
+      serialPrintln(reply);
+}
+
+void AsiMS2000::settingsSet(int settings[])
+{
+    int units[3];
+    parseXYZArgs(units);      
+    char buffer [50];
+    sprintf(buffer, "settings x=%d y=%d z=%d", units[0], units[1], units[2]);
+    debugPrintln(buffer);
+    if(_isAxis[0] != 0) {settings[0] = units[0]; debugPrintln("set X");}
+    if(_isAxis[1] != 0) {settings[1] = units[1]; debugPrintln("set Y");}
+    if(_isAxis[2] != 0) {settings[3] = units[2]; debugPrintln("set Z");}
+    serialPrintln(":A");
+}
+
 
 int AsiMS2000::getCommandNum(String c)
 {
@@ -824,54 +863,18 @@ void AsiMS2000::ttl()
 
 }
 
-
 void AsiMS2000::um()
 {
     if(_isQuery)
     {
-      AsiMS2000::umQuery();
-      return;
+      settingsQuery(AsiSettings.unitMultiplier);      
     }
-    
-    int units[3];
-    parseXYZArgs(units);      
-    char buffer [50];
-    sprintf(buffer, "unit mulitpliers set x=%d y=%d z=%d", units[0], units[1], units[2]);
-    debugPrintln(buffer);
-    if(units[0] != 0) {AsiSettings.unitMultiplier[0] = units[0];}
-    if(units[1] != 0) {AsiSettings.unitMultiplier[1] = units[1];}
-    if(units[2] != 0) {AsiSettings.unitMultiplier[3] = units[2];}
-    serialPrintln(":A");
+    else
+    {
+      settingsSet(AsiSettings.unitMultiplier);
+    }
 }
 
-void AsiMS2000::umQuery()
-{
-      debugPrintln("umQuery()");
-      String reply = "A: ";
-      if(_isAxis[0]) 
-      {
-        reply += "X=";
-        reply += AsiSettings.unitMultiplier[0];
-        reply += " ";
-      }
-      
-      if(_isAxis[1]) 
-      {
-        reply += "Y=";
-        reply += AsiSettings.unitMultiplier[1];
-        reply += " ";
-      }
-      
-      if(_isAxis[2]) 
-      {
-        reply += "Z=";
-        reply += AsiSettings.unitMultiplier[2];
-        reply += " ";
-      }
-      debugPrintln("umQuery->serialPrintln");
-      serialPrintln(reply);
-      debugPrintln("/umQuery()");
-}
 
 void AsiMS2000::units()
 {

@@ -45,6 +45,8 @@ class AsiMS2000
         char* GetArgumentValue(char arg);
         int isQueryCommand(String command);
         void isAxisInCommand();
+        void settingsQuery(int settings[]);
+        void settingsSet(int settings[]);
         
 /////////////////////
 //Protocol commands//
@@ -120,7 +122,6 @@ class AsiMS2000
 	void stopbits();
 	void ttl();
 	void um();
-        void umQuery();
 	void units();
 	void unlock();
 	void vb();
