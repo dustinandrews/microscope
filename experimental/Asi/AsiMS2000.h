@@ -120,6 +120,7 @@ class AsiMS2000
 	void stopbits();
 	void ttl();
 	void um();
+        void umQuery();
 	void units();
 	void unlock();
 	void vb();

@@ -829,7 +829,7 @@ void AsiMS2000::um()
 {
     if(_isQuery)
     {
-      
+      AsiMS2000::umQuery();
       return;
     }
     
@@ -844,6 +844,34 @@ void AsiMS2000::um()
     serialPrintln(":A");
 }
 
+void AsiMS2000::umQuery()
+{
+      debugPrintln("umQuery()");
+      String reply = "A: ";
+      if(_isAxis[0]) 
+      {
+        reply += "X=";
+        reply += AsiSettings.unitMultiplier[0];
+        reply += " ";
+      }
+      
+      if(_isAxis[1]) 
+      {
+        reply += "Y=";
+        reply += AsiSettings.unitMultiplier[1];
+        reply += " ";
+      }
+      
+      if(_isAxis[2]) 
+      {
+        reply += "Z=";
+        reply += AsiSettings.unitMultiplier[2];
+        reply += " ";
+      }
+      debugPrintln("umQuery->serialPrintln");
+      serialPrintln(reply);
+      debugPrintln("/umQuery()");
+}
 
 void AsiMS2000::units()
 {
