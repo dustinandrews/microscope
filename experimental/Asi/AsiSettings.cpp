@@ -11,7 +11,10 @@
 
 AsiSettings::AsiSettings()
 {
-  setSettings(&currentPos, 1.1, 2.02, 3.003);  
+  setSettings(&currentPos, 1.1, 2.02, 3.003); 
+  setSettings(&maxSpeed, 7.1, 7.2, 7.3); 
+  setSettings(&unitMultiplier, 1000, 1000, 1000);
+  setSettings(&wait, 0,0,0);
 }
 
 void AsiSettings::setSettings(AxisSettings *s, int x, int y, int z)
@@ -34,6 +37,5 @@ void AsiSettings::setSettings(AxisSettingsF *s, float x, float y, float z)
 //Defaults//
 ////////////
 //float AsiSettings::currentPos[3] = {1.1, 2.02, 3.003};
-float AsiSettings::maxSpeed[3] = {7.1, 7.2, 7.3};
-int AsiSettings::unitMultiplier[3] = {1000, 1000, 1000};
-int AsiSettings::wait[3] = {0, 0, 0};
+
+

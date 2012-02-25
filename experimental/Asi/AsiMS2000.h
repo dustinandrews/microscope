@@ -10,6 +10,7 @@
 #ifndef AsiMS2000_h
 #define AsiMS2000_h
 #include "WProgram.h"
+#include "AsiSettings.h"
 
 #define NUMCOMMANDS 83
 #define BUFFERLEN 128
@@ -22,7 +23,7 @@ class AsiMS2000
   private: 
         int _numCommands;
         int _isQuery;
-        int _isAxis[3];
+        AxisSettings _isAxis;
         static char* _commands[NUMCOMMANDS];
         static char* _shortcuts[NUMCOMMANDS];
         String _args;       
@@ -40,15 +41,15 @@ class AsiMS2000
         void outputPrintln(char* data);
         void inputPrint(byte data);
         void inputPrintln(char * data);
-        void parseXYZArgs(int parseArray[]);
-        void parseXYZArgs(float parseArray[]);
+        void parseXYZArgs(AxisSettings *);
+        void parseXYZArgs(AxisSettingsF *);
         char* GetArgumentValue(char arg);
         int isQueryCommand(String command);
         void isAxisInCommand();
-        void settingsQuery(int settings[]);
-        void settingsQuery(float settings[]);
-        void settingsSet(int settings[]);
-        void settingsSet(float settings[]);        
+        void settingsQuery(AxisSettings settings);
+        void settingsQuery(AxisSettingsF settings);
+        void settingsSet(AxisSettings *settings);
+        void settingsSet(AxisSettingsF *settings);        
 /////////////////////
 //Protocol commands//
 /////////////////////

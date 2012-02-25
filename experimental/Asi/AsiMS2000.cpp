@@ -18,9 +18,9 @@ AsiMS2000::AsiMS2000()
 {
   _numCommands = NUMCOMMANDS;
   _isQuery = false;
-  _isAxis[0] = false;
-  _isAxis[1] = false;
-  _isAxis[2] = false;
+  _isAxis.x = false;
+  _isAxis.y = false;
+  _isAxis.z = false;
 }
 
 
@@ -97,15 +97,15 @@ void AsiMS2000::interpretCommand(char commandBuffer[])
 
 void AsiMS2000::isAxisInCommand()
 {
-    _isAxis[0] = false;
-    _isAxis[1] = false;
-    _isAxis[2] = false;
+    _isAxis.x = false;
+    _isAxis.y = false;
+    _isAxis.z = false;
     
     for(int i = 0; i < _args.length(); i++)
     {
-       if(_args[i] == 'X') {_isAxis[0] = true;} 
-       if(_args[i] == 'Y') {_isAxis[1] = true;}
-       if(_args[i] == 'Z') {_isAxis[2] = true;}
+       if(_args[i] == 'X') {_isAxis.x = true;} 
+       if(_args[i] == 'Y') {_isAxis.y = true;}
+       if(_args[i] == 'Z') {_isAxis.z = true;}
      }           
 }
 
@@ -121,57 +121,57 @@ int AsiMS2000::isQueryCommand(String command)
   return false;
 }
 
-void AsiMS2000::settingsQuery(int setting[])
+void AsiMS2000::settingsQuery(AxisSettings setting)
 {
       String reply = "A: ";
-      if(_isAxis[0]) 
+      if(_isAxis.x) 
       {
         reply += "X=";
-        reply += setting[0];
+        reply += setting.x;
         reply += " ";
       }
       
-      if(_isAxis[1]) 
+      if(_isAxis.y) 
       {
         reply += "Y=";
-        reply += setting[1];
+        reply += setting.y;
         reply += " ";
       }
       
-      if(_isAxis[2]) 
+      if(_isAxis.z) 
       {
         reply += "Z=";
-        reply += setting[2];
+        reply += setting.z;
         reply += " ";
       }
 
       serialPrintln(reply);
 }
 
-void AsiMS2000::settingsQuery(float setting[])
+void AsiMS2000::settingsQuery(AxisSettingsF setting)
 {
       String reply = "A: ";
       char buffer[50];
-      if(_isAxis[0]) 
+      if(_isAxis.x) 
       {
         reply += "X=";
-        dtostrf(setting[0],1,4,buffer);
+        dtostrf(setting.x,1,4,buffer);
         reply += buffer;
         reply += " ";
       }
       
-      if(_isAxis[1]) 
+      if(_isAxis.y) 
       {
         reply += "Y=";
-        dtostrf(setting[1],1,4,buffer);
+        dtostrf(setting.y,1,4,buffer);
         reply += buffer;
         reply += " ";
       }
       
-      if(_isAxis[2]) 
+      if(_isAxis.z) 
       {
         reply += "Z=";
-        dtostrf(setting[2],1,4,buffer);
+        dtostrf(setting.z,1,4,buffer);
         reply += buffer;
         reply += " ";
       }
@@ -179,29 +179,29 @@ void AsiMS2000::settingsQuery(float setting[])
       serialPrintln(reply);
 }
 
-void AsiMS2000::settingsSet(int settings[])
+void AsiMS2000::settingsSet(AxisSettings *settings)
 {
-    int units[3];
-    parseXYZArgs(units);      
+    AxisSettings units;
+    parseXYZArgs(&units);      
     char buffer [50];
-    sprintf(buffer, "settings x=%d y=%d z=%d", units[0], units[1], units[2]);
+    sprintf(buffer, "settings x=%d y=%d z=%d", units.x, units.y, units.z);
     debugPrintln(buffer);
-    if(_isAxis[0]) {settings[0] = units[0]; debugPrintln("set X");}
-    if(_isAxis[1]) {settings[1] = units[1]; debugPrintln("set Y");}
-    if(_isAxis[2]) {settings[2] = units[2]; debugPrintln("set Z");}
+    if(_isAxis.x) {settings->x = units.x; debugPrintln("set X");}
+    if(_isAxis.y) {settings->y = units.y; debugPrintln("set Y");}
+    if(_isAxis.z) {settings->z = units.z; debugPrintln("set Z");}
     serialPrintln(":A");
 }
 
-void AsiMS2000::settingsSet(float settings[])
+void AsiMS2000::settingsSet(AxisSettingsF *settings)
 {
-    float units[3];
-    parseXYZArgs(units);      
+    AxisSettingsF units;
+    parseXYZArgs(&units);      
     char buffer [50];
-    sprintf(buffer, "settings x=%d y=%d z=%d", units[0], units[1], units[2]);
+    sprintf(buffer, "settings x=%d y=%d z=%d", units.x, units.y, units.z);
     debugPrintln(buffer);
-    if(_isAxis[0]) {settings[0] = units[0]; debugPrintln("set X");}
-    if(_isAxis[1]) {settings[1] = units[1]; debugPrintln("set Y");}
-    if(_isAxis[2]) {settings[2] = units[2]; debugPrintln("set Z");}
+    if(_isAxis.x) {settings->x = units.x; debugPrintln("set X");}
+    if(_isAxis.y) {settings->y = units.y; debugPrintln("set Y");}
+    if(_isAxis.z) {settings->z = units.z; debugPrintln("set Z");}
     serialPrintln(":A");
 }
 
@@ -248,18 +248,18 @@ void AsiMS2000::displayCommands()
   }
 }
 
-void AsiMS2000::parseXYZArgs(int parseArray[])
+void AsiMS2000::parseXYZArgs(AxisSettings *units)
 {
-  parseArray[0] = atoi(GetArgumentValue('X'));
-  parseArray[1] = atoi(GetArgumentValue('Y'));
-  parseArray[2] = atoi(GetArgumentValue('Z'));
+  units->x = atoi(GetArgumentValue('X'));
+  units->y = atoi(GetArgumentValue('Y'));
+  units->z = atoi(GetArgumentValue('Z'));
 }
 
-void AsiMS2000::parseXYZArgs(float parseArray[])
+void AsiMS2000::parseXYZArgs(AxisSettingsF *units)
 {
-  parseArray[0] = atof(GetArgumentValue('X'));
-  parseArray[1] = atof(GetArgumentValue('Y'));
-  parseArray[2] = atof(GetArgumentValue('Z'));
+  units->x = atof(GetArgumentValue('X'));
+  units->y = atof(GetArgumentValue('Y'));
+  units->z = atof(GetArgumentValue('Z'));
 }
 
 char* AsiMS2000::GetArgumentValue(char arg)
@@ -880,7 +880,7 @@ void AsiMS2000::speed()
     }
     else
     {
-      settingsSet(AsiSettings.maxSpeed);
+      settingsSet(&AsiSettings.maxSpeed);
     }
 }
 
@@ -921,7 +921,7 @@ void AsiMS2000::um()
     }
     else
     {
-      settingsSet(AsiSettings.unitMultiplier);
+      settingsSet(&AsiSettings.unitMultiplier);
     }
 }
 
@@ -974,7 +974,7 @@ void AsiMS2000::wait()
     }
     else
     {
-      settingsSet(AsiSettings.wait);
+      settingsSet(&AsiSettings.wait);
     }
 
 
@@ -990,27 +990,27 @@ void AsiMS2000::where()
     debugPrintln(buffer);
     if(arglen == 0)
     {
-      _isAxis[0] = true;
-      _isAxis[1] = true;
-      _isAxis[2] = true;
+      _isAxis.x = true;
+      _isAxis.y = true;
+      _isAxis.z = true;
     }
     
     String response = ":A ";
     //char buffer [25];
-    if(_isAxis[0]) 
+    if(_isAxis.x) 
     {
       
       dtostrf(AsiSettings.currentPos.x,1,4,buffer);
       response.concat(String(buffer) + " ");
     }
   
-    if(_isAxis[1]) 
+    if(_isAxis.y) 
     {
       dtostrf(AsiSettings.currentPos.y,1,4,buffer);
       response.concat(String(buffer) + " ");
     }
     
-    if(_isAxis[2]) 
+    if(_isAxis.z) 
     {
       dtostrf(AsiSettings.currentPos.z,1,4,buffer);
       response.concat(String(buffer) + " ");
