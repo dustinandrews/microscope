@@ -13,10 +13,12 @@ AsiSettings::AsiSettings()
 {
 		
 }
+//TODO: add read-write for settings to the EEPROM
 
 ////////////
 //Defaults//
 ////////////
 float AsiSettings::currentPos[3] = {1.1, 2.02, 3.003};
+float AsiSettings::maxSpeed[3] = {7.1, 7.2, 7.3};
 int AsiSettings::unitMultiplier[3] = {1000, 1000, 1000};
 int AsiSettings::wait[3] = {0, 0, 0};

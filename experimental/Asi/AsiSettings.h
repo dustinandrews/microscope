@@ -13,12 +13,13 @@
 
 class AsiSettings
 {
-	public:
-		AsiSettings();
-		//3 element arrays are are X,Y,Z
-		static float currentPos[3];
-		static int unitMultiplier[3];
-		static int wait[3];
+  public:
+    AsiSettings();
+    //3 element arrays are are X,Y,Z
+    static float currentPos[3];
+    static float maxSpeed[3];
+    static int unitMultiplier[3];
+    static int wait[3];
 		
 };
 

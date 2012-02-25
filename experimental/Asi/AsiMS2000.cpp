@@ -147,6 +147,37 @@ void AsiMS2000::settingsQuery(int setting[])
       serialPrintln(reply);
 }
 
+void AsiMS2000::settingsQuery(float setting[])
+{
+      String reply = "A: ";
+      char buffer[50];
+      if(_isAxis[0]) 
+      {
+        reply += "X=";
+        dtostrf(setting[0],1,4,buffer);
+        reply += buffer;
+        reply += " ";
+      }
+      
+      if(_isAxis[1]) 
+      {
+        reply += "Y=";
+        dtostrf(setting[1],1,4,buffer);
+        reply += buffer;
+        reply += " ";
+      }
+      
+      if(_isAxis[2]) 
+      {
+        reply += "Z=";
+        dtostrf(setting[2],1,4,buffer);
+        reply += buffer;
+        reply += " ";
+      }
+
+      serialPrintln(reply);
+}
+
 void AsiMS2000::settingsSet(int settings[])
 {
     int units[3];
@@ -154,9 +185,22 @@ void AsiMS2000::settingsSet(int settings[])
     char buffer [50];
     sprintf(buffer, "settings x=%d y=%d z=%d", units[0], units[1], units[2]);
     debugPrintln(buffer);
-    if(_isAxis[0] != 0) {settings[0] = units[0]; debugPrintln("set X");}
-    if(_isAxis[1] != 0) {settings[1] = units[1]; debugPrintln("set Y");}
-    if(_isAxis[2] != 0) {settings[3] = units[2]; debugPrintln("set Z");}
+    if(_isAxis[0]) {settings[0] = units[0]; debugPrintln("set X");}
+    if(_isAxis[1]) {settings[1] = units[1]; debugPrintln("set Y");}
+    if(_isAxis[2]) {settings[2] = units[2]; debugPrintln("set Z");}
+    serialPrintln(":A");
+}
+
+void AsiMS2000::settingsSet(float settings[])
+{
+    float units[3];
+    parseXYZArgs(units);      
+    char buffer [50];
+    sprintf(buffer, "settings x=%d y=%d z=%d", units[0], units[1], units[2]);
+    debugPrintln(buffer);
+    if(_isAxis[0]) {settings[0] = units[0]; debugPrintln("set X");}
+    if(_isAxis[1]) {settings[1] = units[1]; debugPrintln("set Y");}
+    if(_isAxis[2]) {settings[2] = units[2]; debugPrintln("set Z");}
     serialPrintln(":A");
 }
 
@@ -214,7 +258,7 @@ void AsiMS2000::parseXYZArgs(float parseArray[])
 {
   parseArray[0] = atof(GetArgumentValue('X'));
   parseArray[1] = atof(GetArgumentValue('Y'));
-  parseArray[2] = atof(GetArgumentValue('Z'));    
+  parseArray[2] = atof(GetArgumentValue('Z'));
 }
 
 char* AsiMS2000::GetArgumentValue(char arg)
@@ -829,7 +873,14 @@ void AsiMS2000::si()
 
 void AsiMS2000::speed()
 {
-    returnErrorToSerial(-6);
+  if(_isQuery)
+    {
+      settingsQuery(AsiSettings.maxSpeed);      
+    }
+    else
+    {
+      settingsSet(AsiSettings.maxSpeed);
+    }
 }
 
 

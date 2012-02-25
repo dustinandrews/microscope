@@ -46,8 +46,9 @@ class AsiMS2000
         int isQueryCommand(String command);
         void isAxisInCommand();
         void settingsQuery(int settings[]);
+        void settingsQuery(float settings[]);
         void settingsSet(int settings[]);
-        
+        void settingsSet(float settings[]);        
 /////////////////////
 //Protocol commands//
 /////////////////////
