@@ -20,7 +20,13 @@ class AsiMS2000
         AsiMS2000();
         void checkSerial();
         void displayCommands();
-  private: 
+        void clearBusyStatus();
+        AxisSettingsF getCurrentPos();
+        AxisSettingsF getDesiredPos();
+        void setCurrentPos(AxisSettingsF pos);
+        
+  private:
+        volatile int _busyStatus;
         int _numCommands;
         int _isQuery;
         AxisSettings _isAxis;

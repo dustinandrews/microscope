@@ -13,7 +13,8 @@ AsiSettings::AsiSettings()
 {
   //set power on defaults.
   //TODO: Store config information in the EEPROM if needed.
-  setSettings(&currentPos, 1.1, 2.02, 3.003); 
+  setSettings(&currentPos, 1.1, 2.02, 3.003);
+  setSettings(&desiredPos, 1.1, 2.02, 3.003); 
   setSettings(&maxSpeed, 7.1, 7.2, 7.3); 
   setSettings(&unitMultiplier, 1000, 1000, 1000);
   setSettings(&wait, 0,0,0);

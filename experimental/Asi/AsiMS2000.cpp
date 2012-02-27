@@ -21,8 +21,31 @@ AsiMS2000::AsiMS2000()
   _isAxis.x = false;
   _isAxis.y = false;
   _isAxis.z = false;
+  _busyStatus = true;
 }
 
+
+//The motor controller calls this to indicate movements are complete.
+//Commands that initiate moves set busy status.
+void AsiMS2000::clearBusyStatus()
+{
+    _busyStatus = false;
+}
+
+AxisSettingsF AsiMS2000::getDesiredPos()
+{
+  return AsiSettings.desiredPos;
+}
+
+AxisSettingsF AsiMS2000::getCurrentPos()
+{
+  return AsiSettings.currentPos;
+}
+
+void AsiMS2000::setCurrentPos(AxisSettingsF pos)
+{
+  AsiSettings.currentPos = pos;
+}
 
 void AsiMS2000::checkSerial()
 {
@@ -756,9 +779,13 @@ void AsiMS2000::move()
 
 void AsiMS2000::movrel()
 {
-    returnErrorToSerial(-6);
-
-
+  _busyStatus = true;
+  AxisSettings units;  
+  parseXYZArgs(&units);
+  AsiSettings.desiredPos.x += (float)units.x / 10;
+  AsiSettings.desiredPos.y += (float)units.y / 10;
+  AsiSettings.desiredPos.z += (float)units.z / 10;
+  serialPrintln(":A");  
 }
 
 
@@ -932,7 +959,14 @@ void AsiMS2000::spin()
 void AsiMS2000::status()
 {
     //Status should send "B" for Busy and "N" for Not busy.
-    serialPrintln("N");
+    if(_busyStatus)
+    {
+      serialPrintln("B");
+    }
+    else
+    {
+      serialPrintln("N");
+    }
 }
 
 

@@ -29,6 +29,7 @@ class AsiSettings
   public:
     AsiSettings(); 
     AxisSettingsF currentPos;
+    AxisSettingsF desiredPos;
     AxisSettingsF maxSpeed;
     AxisSettingsF backlash;
     AxisSettingsF error;

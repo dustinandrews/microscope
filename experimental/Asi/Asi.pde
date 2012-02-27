@@ -23,5 +23,12 @@ void setup()
 void loop()
 {
   AsiMS2000.checkSerial();
+  //simulate moves by only clearing the status every 1/2 second.
+  if(millis() % 500 == 0)
+  {
+    //AxisSettingsF desired = AsiMS2000.getDesiredPos();
+    AsiMS2000.setCurrentPos(AsiMS2000.getDesiredPos());
+    AsiMS2000.clearBusyStatus();
+  }
 }
 
