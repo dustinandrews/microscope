@@ -43,6 +43,7 @@ const int gnd_resetSteppers = 8;//ground to reset
 const int disableSteppers = 9; //Enable on the A3967SLB is "Active Low", so the name is changed to make programming clearers.
 const int gnd_sleepSteppers = 10;//ground to set boards to sleep mode.
 
+//analog inputs that control the motors.
 const int motorA_in = A0;
 const int motorB_in = A1;
 const int motorC_in = A2;
@@ -50,9 +51,9 @@ const int motorC_in = A2;
 /////////////////////////
 //programming constants//
 /////////////////////////
-const int dead_zone = 0; //number of units out of 1024 that counts as centered;
+const int dead_zone = 10; //number of units out of 1024 that counts as centered;
 const int pot_center = 512;
-const int numInputPots = 3;
+
 
 /////////////////////////////////////////
 //Timing Constants and shared variables//
@@ -150,40 +151,40 @@ void handleAsiCommands()
 
 void realTimeHandler(unsigned long time)
 {
-    int inputArray[3];
-    readInputs(inputArray);
-    adjustInput(inputArray);
-    setMotorDirection(inputArray);
-    calculateMotorSpeeds(inputArray);
+    AxisSettings inputArray;
+    readInputs(&inputArray);
+    adjustInput(&inputArray);
+    setMotorDirection(&inputArray);
+    calculateMotorSpeeds(&inputArray);
 }
 
-void readInputs(int inputs[])
+void readInputs(AxisSettings *inputs)
 {
-  inputs[0] = analogRead(motorA_in);
-  inputs[1] = analogRead(motorB_in);
-  inputs[2] = analogRead(motorC_in);
+  inputs->x = analogRead(motorA_in);
+  inputs->y = analogRead(motorB_in);
+  inputs->z = analogRead(motorC_in);
 }
 
-void adjustInput(int inputs[])
+void adjustInput(AxisSettings *inputs)
 {
-   inputs[0] = inputs[0] - pot_center;
-   inputs[1] = inputs[1] - pot_center;
-   inputs[2] = inputs[2] - pot_center;
+   inputs->x = inputs->x - pot_center;
+   inputs->y = inputs->y - pot_center;
+   inputs->z = inputs->z - pot_center;
 }
 
-void setMotorDirection(int inputs[])
+void setMotorDirection(AxisSettings *inputs)
 {
-   setDir(inputs[0], motorA_dir);
-   setDir(inputs[1], motorB_dir);
-   setDir(inputs[2], motorC_dir);
+   setDir(inputs->x, motorA_dir);
+   setDir(inputs->y, motorB_dir);
+   setDir(inputs->z, motorC_dir);
 }
 
-void calculateMotorSpeeds(int inputs[])
+void calculateMotorSpeeds(AxisSettings *inputs)
 {
   //square the input to get a good input curve.
-  ma_persec = abs(((long)inputs[0] * (long)inputs[0]) / perSecRatio);
-  mb_persec = abs(((long)inputs[1] * (long)inputs[1]) / perSecRatio);
-  mc_persec = abs(((long)inputs[2] * (long)inputs[2]) / perSecRatio);
+  ma_persec = abs(((long)inputs->x * (long)inputs->x) / perSecRatio);
+  mb_persec = abs(((long)inputs->y * (long)inputs->y) / perSecRatio);
+  mc_persec = abs(((long)inputs->z * (long)inputs->z) / perSecRatio);
 }
 
 
@@ -198,17 +199,17 @@ void motorCallback()
     long mb_mod = intPerSec/mb_persec;
     long mc_mod = intPerSec/mc_persec;
     
-    if(ma_persec > 0 && interupts % ma_mod == 0)
+    if(ma_persec > dead_zone && interupts % ma_mod == 0)
     {
       digitalWrite(motorA_step, HIGH);    
     }
     
-    if(mb_persec > 0 && interupts % mb_mod == 0)
+    if(mb_persec > dead_zone && interupts % mb_mod == 0)
     {
       digitalWrite(motorB_step, HIGH);
     }
     
-    if(mb_persec > 0 && interupts % mc_mod == 0)
+    if(mc_persec > dead_zone && interupts % mc_mod == 0)
     {
       digitalWrite(motorC_step, HIGH);
     }    
