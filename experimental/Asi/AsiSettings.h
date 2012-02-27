@@ -35,6 +35,7 @@ class AsiSettings
     AxisSettingsF pcros;
     AxisSettingsF setlow;
     AxisSettingsF setup;
+    AxisSettingsF overshoot;
     AxisSettings accel;
     AxisSettings unitMultiplier;
     AxisSettings wait;

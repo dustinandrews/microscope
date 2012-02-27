@@ -119,7 +119,12 @@ int AsiMS2000::isQueryCommand(String command)
 
 void AsiMS2000::settingsQuery(AxisSettings setting)
 {
-      String reply = "A: ";
+    String reply = ":A ";
+    settingsQuery(setting, reply);
+}    
+
+void AsiMS2000::settingsQuery(AxisSettings setting, String reply)
+{
       if(_isAxis.x) 
       {
         reply += "X=";
@@ -146,12 +151,17 @@ void AsiMS2000::settingsQuery(AxisSettings setting)
 
 void AsiMS2000::settingsQuery(AxisSettingsF setting)
 {
-      String reply = "A: ";
+      String reply = ":A ";
+      settingsQuery(setting, reply);
+}
+      
+void AsiMS2000::settingsQuery(AxisSettingsF setting, String reply)
+{
       char buffer[50];
       if(_isAxis.x) 
       {
         reply += "X=";
-        dtostrf(setting.x,1,4,buffer);
+        dtostrf(setting.x,1,6,buffer);
         reply += buffer;
         reply += " ";
       }
@@ -159,7 +169,7 @@ void AsiMS2000::settingsQuery(AxisSettingsF setting)
       if(_isAxis.y) 
       {
         reply += "Y=";
-        dtostrf(setting.y,1,4,buffer);
+        dtostrf(setting.y,1,6,buffer);
         reply += buffer;
         reply += " ";
       }
@@ -167,7 +177,7 @@ void AsiMS2000::settingsQuery(AxisSettingsF setting)
       if(_isAxis.z) 
       {
         reply += "Z=";
-        dtostrf(setting.z,1,4,buffer);
+        dtostrf(setting.z,1,6,buffer);
         reply += buffer;
         reply += " ";
       }
@@ -356,6 +366,19 @@ void AsiMS2000::getSetCommand(AxisSettings *setting)
     }
 }
 
+//some responses need :A and others just a :. getSetCommand2 is with the colon.
+void AsiMS2000::getSetCommand2(AxisSettings *setting)
+{
+    if(_isQuery)
+    {
+      settingsQuery((*setting), ":");      
+    }
+    else
+    {
+      settingsSet(setting);
+    }
+}
+
 void AsiMS2000::getSetCommand(AxisSettingsF *setting)
 {
     if(_isQuery)
@@ -367,6 +390,20 @@ void AsiMS2000::getSetCommand(AxisSettingsF *setting)
       settingsSet(setting);
     }
 }
+
+//some responses need :A and others just a :. getSetCommand2 is with the colon.
+void AsiMS2000::getSetCommand2(AxisSettingsF *setting)
+{
+    if(_isQuery)
+    {
+      settingsQuery((*setting), ":");      
+    }
+    else
+    {
+      settingsSet(setting);
+    }
+}
+
 
 /* These are the commands from the protocols. The program looks up the command
  * and runs the desired method from below. The methods 
@@ -458,7 +495,7 @@ void AsiMS2000::azero()
 
 void AsiMS2000::backlash()
 {
-      getSetCommand(&AsiSettings.backlash);
+  getSetCommand2(&AsiSettings.backlash);  
 }
 
 
@@ -480,8 +517,7 @@ void AsiMS2000::build()
 {
   if(_args.indexOf('X') > -1)
   {
-    serialPrintln("STD_XYZ");
-    serialPrintln("Motor Axes: X Y Z");
+    serialPrintln("STD_XYZ");    
   }
   else
   {
@@ -554,7 +590,7 @@ void AsiMS2000::epolarity()
 
 void AsiMS2000::error()
 {
-      getSetCommand(&AsiSettings.error);
+      getSetCommand2(&AsiSettings.error);
 }
 
 
@@ -961,7 +997,7 @@ void AsiMS2000::version()
 
 void AsiMS2000::wait()
 {
-  getSetCommand(&AsiSettings.wait);    
+  getSetCommand2(&AsiSettings.wait);    
 }
 
 
@@ -981,19 +1017,19 @@ void AsiMS2000::where()
     if(_isAxis.x) 
     {
       
-      dtostrf(AsiSettings.currentPos.x,1,4,buffer);
+      dtostrf(AsiSettings.currentPos.x,1,1,buffer);
       response.concat(String(buffer) + " ");
     }
   
     if(_isAxis.y) 
     {
-      dtostrf(AsiSettings.currentPos.y,1,4,buffer);
+      dtostrf(AsiSettings.currentPos.y,1,1,buffer);
       response.concat(String(buffer) + " ");
     }
     
     if(_isAxis.z) 
     {
-      dtostrf(AsiSettings.currentPos.z,1,4,buffer);
+      dtostrf(AsiSettings.currentPos.z,1,1,buffer);
       response.concat(String(buffer) + " ");
     }
   
@@ -1032,6 +1068,11 @@ void AsiMS2000::z2b()
 
 }
 
+void AsiMS2000::overshoot()
+{
+  getSetCommand(&AsiSettings.overshoot);   
+}
+
 
 void AsiMS2000::zs()
 {
@@ -1040,10 +1081,6 @@ void AsiMS2000::zs()
 
 void AsiMS2000::selectCommand(int commandNum)
 {
-  char buffer[12];
-  sprintf(buffer, "Command %d", commandNum);
-  debugPrintln(buffer);
-  
   switch(commandNum)
   {
       case 0:
@@ -1295,7 +1332,9 @@ void AsiMS2000::selectCommand(int commandNum)
       case 82:
           zs();
           break;
-
+      case 83:
+          overshoot();
+          break;
   }
 }
 
@@ -1310,7 +1349,7 @@ char*  AsiMS2000::_commands[] =
                   "RDSTAT","RELOCK","RESET","RT","RUNAWAY","SAVESET","SAVEPOS","SCAN",
                   "SCANR","SCANV","SECURE","SETHOME","SETLOW","SETUP","SI","SPEED","SPIN",
                   "STATUS","STOPBITS","TTL","UM","UNITS","UNLOCK","VB","VECTOR","VERSION",
-                  "WAIT","WHERE","WHO","WRDAC","ZERO","Z2B","ZS"
+                  "WAIT","WHERE","WHO","WRDAC","ZERO","Z2B","ZS","OVERSHOOT"
                   };
                   
 char* AsiMS2000::_shortcuts[] =
@@ -1323,6 +1362,6 @@ char* AsiMS2000::_shortcuts[] =
                    "RS","RL","~","RT","RU","SS","SP","SN",
                    "NR","NV","SECURE","HM","SL","SU","SI","S","@",
                    "/","SB","TTL","UM","UN","UL","VB","VE","V",
-                   "WT","W","N","WRDAC","Z","Z2B","ZS"
+                   "WT","W","N","WRDAC","Z","Z2B","ZS","OS"
                    };
 

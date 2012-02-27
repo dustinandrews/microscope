@@ -11,6 +11,8 @@
 
 AsiSettings::AsiSettings()
 {
+  //set power on defaults.
+  //TODO: Store config information in the EEPROM if needed.
   setSettings(&currentPos, 1.1, 2.02, 3.003); 
   setSettings(&maxSpeed, 7.1, 7.2, 7.3); 
   setSettings(&unitMultiplier, 1000, 1000, 1000);
@@ -22,6 +24,7 @@ AsiSettings::AsiSettings()
   setSettings(&setlow, 0,0,0);
   setSettings(&setup, 100,100,100); 
   setSettings(&zs, 0,0,0); 
+  setSettings(&overshoot, 0,0,0);
 }
 
 void AsiSettings::setSettings(AxisSettings *s, int x, int y, int z)
@@ -37,12 +40,5 @@ void AsiSettings::setSettings(AxisSettingsF *s, float x, float y, float z)
   s->y = y;
   s->z = z;
 }
-
-
-
-////////////
-//Defaults//
-////////////
-//float AsiSettings::currentPos[3] = {1.1, 2.02, 3.003};
 
 

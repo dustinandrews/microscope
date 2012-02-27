@@ -12,7 +12,7 @@
 #include "WProgram.h"
 #include "AsiSettings.h"
 
-#define NUMCOMMANDS 83
+#define NUMCOMMANDS 84
 #define BUFFERLEN 128
 class AsiMS2000
 {    
@@ -47,11 +47,15 @@ class AsiMS2000
         int isQueryCommand(String command);
         void isAxisInCommand();
         void settingsQuery(AxisSettings settings);
+        void settingsQuery(AxisSettings settings, String reply);
         void settingsQuery(AxisSettingsF settings);
+        void settingsQuery(AxisSettingsF setting, String reply);
         void settingsSet(AxisSettings *settings);
         void settingsSet(AxisSettingsF *settings);
         void getSetCommand(AxisSettings *settings);
         void getSetCommand(AxisSettingsF *settings);
+        void getSetCommand2(AxisSettings *setting);
+        void getSetCommand2(AxisSettingsF *setting);
 /////////////////////
 //Protocol commands//
 /////////////////////
@@ -138,6 +142,7 @@ class AsiMS2000
 	void zero();
 	void z2b();
 	void zs();
+        void overshoot();
 };
 
 
