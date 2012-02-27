@@ -771,20 +771,26 @@ void AsiMS2000::motctrl()
 
 void AsiMS2000::move()
 {
-    returnErrorToSerial(-6);
-
-
+  //TODO:consider unitMultiplier
+  _busyStatus = true;
+  AxisSettingsF units;  
+  parseXYZArgs(&units);
+  AsiSettings.desiredPos.x = units.x;
+  AsiSettings.desiredPos.y = units.y;
+  AsiSettings.desiredPos.z = units.z;
+  serialPrintln(":A");  
 }
 
 
 void AsiMS2000::movrel()
 {
+  //TODO: consider unitMultiplier
   _busyStatus = true;
-  AxisSettings units;  
+  AxisSettingsF units;  
   parseXYZArgs(&units);
-  AsiSettings.desiredPos.x += (float)units.x / 10;
-  AsiSettings.desiredPos.y += (float)units.y / 10;
-  AsiSettings.desiredPos.z += (float)units.z / 10;
+  AsiSettings.desiredPos.x += units.x;
+  AsiSettings.desiredPos.y += units.y;
+  AsiSettings.desiredPos.z += units.z;
   serialPrintln(":A");  
 }
 

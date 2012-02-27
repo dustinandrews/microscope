@@ -15,6 +15,8 @@
 // Sketch->"Add File" menu.
 #include "TimerThree.h"
 
+#include "AsiMS2000.h"
+
 /////////////////////////
 //Serial Debug Messages//
 /////////////////////////
