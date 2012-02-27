@@ -15,7 +15,11 @@
 // Sketch->"Add File" menu.
 #include "TimerThree.h"
 
+//AsiMS2000 encapsulates the interface to the MicroManager.
+//AsiMS2000 defaults to PC communinication on Serial1 at 9600
+//with debug output on Serial at 115200.
 #include "AsiMS2000.h"
+AsiMS2000 AsiMS2000;
 
 /////////////////////////
 //Serial Debug Messages//
@@ -117,22 +121,13 @@ void loop()
   static unsigned long lastInputTime = 0;
   static unsigned long lastOutputTime = 0;
   unsigned long time = 0;
-  int inputArray[3];
-  
+
+  handleAsiCommands();
+   
   time = millis();
-  if(time - lastInputTime > input_delay)
+  if(time - lastInputTime > input_delay && AsiMS2000.getBusyStatus() == false)
   {
-    readInputs(inputArray);
-    if(DEBUG)
-    {
-      char buffer [50];
-      sprintf(buffer,"A:%d B:%d C:%d", inputArray[0],inputArray[1],inputArray[2]);
-      Serial.println(buffer);
-    }
-    
-    adjustInput(inputArray);
-    setMotorDirection(inputArray);
-    calculateMotorSpeeds(inputArray);
+    realTimeHandler(time);
     lastInputTime = time; 
   }
   
@@ -141,6 +136,25 @@ void loop()
     interupts = 0;
   }
   
+  AsiMS2000.checkSerial();
+  
+}
+
+void handleAsiCommands()
+{
+  //TODO: Actually track and move motors.
+  AxisSettingsF desired = AsiMS2000.getDesiredPos();
+  AsiMS2000.setCurrentPos(desired);
+  AsiMS2000.clearBusyStatus();
+}
+
+void realTimeHandler(unsigned long time)
+{
+    int inputArray[3];
+    readInputs(inputArray);
+    adjustInput(inputArray);
+    setMotorDirection(inputArray);
+    calculateMotorSpeeds(inputArray);
 }
 
 void readInputs(int inputs[])

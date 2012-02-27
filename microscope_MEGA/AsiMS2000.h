@@ -21,6 +21,7 @@ class AsiMS2000
         void checkSerial();
         void displayCommands();
         void clearBusyStatus();
+        int  getBusyStatus();
         AxisSettingsF getCurrentPos();
         AxisSettingsF getDesiredPos();
         void setCurrentPos(AxisSettingsF pos);

@@ -16,6 +16,7 @@ AsiSettings AsiSettings;
 
 AsiMS2000::AsiMS2000()
 {
+  Serial1.begin(9600);
   _numCommands = NUMCOMMANDS;
   _isQuery = false;
   _isAxis.x = false;
@@ -30,6 +31,11 @@ AsiMS2000::AsiMS2000()
 void AsiMS2000::clearBusyStatus()
 {
     _busyStatus = false;
+}
+
+int AsiMS2000::getBusyStatus()
+{
+  return _busyStatus;
 }
 
 AxisSettingsF AsiMS2000::getDesiredPos()
@@ -47,6 +53,7 @@ void AsiMS2000::setCurrentPos(AxisSettingsF pos)
   AsiSettings.currentPos = pos;
 }
 
+//This method should be called from the main sketch in loop();
 void AsiMS2000::checkSerial()
 {
   int inByte = 0;
