@@ -135,11 +135,13 @@ void loop()
   static unsigned long lastOutputTime = 0;
   unsigned long time = 0;
 
-  handleAsiCommands();
+  //call the serial protocol to check for incoming commands from the PC.
+  AsiMS2000.checkSerial();
+
    
   time = millis();
-  //handle direct input according to the delay and only if not already busy.
-  if(time - lastInputTime > input_delay)// && AsiMS2000.getBusyStatus() == false)
+  //handle direct input only if not already busy handling moves from the PC.
+  if(time - lastInputTime > input_delay) && AsiMS2000.getBusyStatus() == false)
   {
     realTimeHandler(time);
     lastInputTime = time;     
@@ -152,6 +154,7 @@ void loop()
   }
 }
 
+//call to display detailed position information on the debug port.
 void displayCurrentToDesired()
 {
     char buffer[20];
@@ -184,12 +187,6 @@ void displayCurrentToDesired()
 }
 
 
-void handleAsiCommands()
-{
-  AsiMS2000.checkSerial();
-}
-
-
 //convert from int position to float postion
 //actual position is maintained as INT for accuracy.
 AxisSettingsF actualPositionToF()
@@ -210,7 +207,7 @@ int isWithinTolerance(float one, float two, float tolerance)
   return true;
 }
 
-
+//Check inputs and set motor speeds appropriatly.
 void realTimeHandler(unsigned long time)
 {
     AxisSettings inputArray;
@@ -220,6 +217,7 @@ void realTimeHandler(unsigned long time)
     calculateMotorSpeeds(&inputArray);
     setMotorSpeeds(&inputArray);
 }
+
 
 void readInputs(AxisSettings *inputs)
 {
@@ -242,6 +240,14 @@ void setMotorDirection(AxisSettings *inputs)
    axisDirection.z = setDir(inputs->z, motorZ_dir);
 }
 
+void setMotorSpeeds(AxisSettings *inputs)
+{
+  axisSpeed.x = inputs->x;
+  axisSpeed.y = inputs->y;
+  axisSpeed.z = inputs->z;  
+}
+
+//set the direction to the pin and returns the value set.
 int setDir(float pos, int pin)
 {
    if(pos > 0)
@@ -256,7 +262,8 @@ int setDir(float pos, int pin)
    }
 }
 
-
+//Take the input values (after center adjustment)
+//and calculate the pulses per second to send to the motor.
 void calculateMotorSpeeds(AxisSettings *inputs)
 {
   //square the input to get a good input curve
@@ -289,17 +296,11 @@ void calculateMotorSpeeds(AxisSettings *inputs)
   
 }
 
-void setMotorSpeeds(AxisSettings *inputs)
-{
-  axisSpeed.x = inputs->x;
-  axisSpeed.y = inputs->y;
-  axisSpeed.z = inputs->z;  
-}
-
-
+//This method is called automatically a number of times equall to intPerSec
+//The motors are pulses only here and the position of the axis is updated.
 void motorCallback()
 {
-    //moveToDesired();
+    moveToDesired();
     digitalWrite(motorX_step, LOW);
     digitalWrite(motorY_step, LOW);
     digitalWrite(motorZ_step, LOW);
@@ -331,13 +332,14 @@ void motorCallback()
     AsiMS2000.setCurrentPos(actualPositionToF());
 }
 
+//If a move order from the serial interface is in progress,
+//calculate if more movenment is needs and in what direction.
 void moveToDesired()
 {
   if(!AsiMS2000.getBusyStatus())
   {
     return;
   }
-  //Calculate which motors to move if busy (moving) status is true;
   
   AxisSettingsF desired = AsiMS2000.getDesiredPos();  
   AxisSettingsF actualF = actualPositionToF();
@@ -379,10 +381,5 @@ void moveToDesired()
   if(isAtDesired)
   {
     AsiMS2000.clearBusyStatus();
-    displayCurrentToDesired();
   }
 }
-
-
-
-
