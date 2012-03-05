@@ -16,9 +16,9 @@
 #endif
 
 struct AxisSettings {
-  int x;
-  int y;
-  int z;
+  long x;
+  long y;
+  long z;
 };
 
 struct AxisSettingsF {

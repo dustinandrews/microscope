@@ -141,7 +141,7 @@ void loop()
    
   time = millis();
   //handle direct input according to the delay and only if not already busy.
-  if(time - lastInputTime > input_delay && AsiMS2000.getBusyStatus() == false)
+  if(time - lastInputTime > input_delay)// && AsiMS2000.getBusyStatus() == false)
   {
     realTimeHandler(time);
     lastInputTime = time;     
@@ -151,6 +151,24 @@ void loop()
   if(interupts >= intPerSec)
   {
     interupts = 0;
+    char buffer[50];
+    sprintf(buffer, "x %d    y %d    z %d", axisDirection.x, axisDirection.z, axisDirection.z);
+    Serial.println(buffer);
+    AxisSettings inputs;
+    readInputs(&inputs);
+    sprintf(buffer, "x %d    y %d    z %d", inputs.x, inputs.y, inputs.z);
+    Serial.println(buffer);
+    
+    adjustInput(&inputs);
+    sprintf(buffer, "x %d    y %d    z %d", inputs.x, inputs.y, inputs.z);
+    Serial.println(buffer);   
+    
+    calculateMotorSpeeds(&inputs); 
+    sprintf(buffer, "x %d    y %d    z %d", inputs.x, inputs.y, inputs.z);
+    Serial.println(buffer);   
+
+    sprintf(buffer, "x %d    y %d    z %d\n", mx_persec, my_persec, mz_persec);       
+    Serial.println(buffer);
   }
   
 
@@ -160,7 +178,7 @@ void loop()
 void displayCurrentToDesired()
 {
     char buffer[20];
-    String reply = "\n";    
+    String reply = "";    
     AxisSettingsF a = actualPositionToF();
     AxisSettingsF d = AsiMS2000.getDesiredPos();
     dtostrf(a.x,1,4,buffer);
@@ -223,6 +241,7 @@ void realTimeHandler(unsigned long time)
     adjustInput(&inputArray);
     setMotorDirection(&inputArray);
     calculateMotorSpeeds(&inputArray);
+    setMotorSpeeds(&inputArray);
 }
 
 void readInputs(AxisSettings *inputs)
@@ -264,25 +283,46 @@ int setDir(float pos, int pin)
 void calculateMotorSpeeds(AxisSettings *inputs)
 {
   //square the input to get a good input curve
-  if(abs(inputs->x > dead_zone))
+  if(abs(inputs->x) > dead_zone)
   {
-   mx_persec = abs(((long)inputs->x * (long)inputs->x) / perSecRatio);
+   inputs->x = (inputs->x * inputs->x) / perSecRatio;
+  }
+  else
+  {
+    inputs->x = 0;
   }
 
-  if(abs(inputs->y > dead_zone))
+  if(abs(inputs->y) > dead_zone)
   {
-    my_persec = abs(((long)inputs->y * (long)inputs->y) / perSecRatio);
+    inputs->y = (inputs->y * inputs->y) / perSecRatio;
   }
-  if(abs(inputs->z > dead_zone))
+  else
   {
-    mz_persec = abs(((long)inputs->z * (long)inputs->z) / perSecRatio);
+    inputs->y = 0;
   }
+
+  if(abs(inputs->z) > dead_zone)
+  {
+    inputs->z = (inputs->z * inputs->z) / perSecRatio;
+  }
+  else
+  {
+    inputs->z = 0;
+  }
+  
+}
+
+void setMotorSpeeds(AxisSettings *inputs)
+{
+  mx_persec = inputs->x;
+  my_persec = inputs->y;
+  mz_persec = inputs->z;  
 }
 
 
 void motorCallback()
 {
-    moveToDesired();
+    //moveToDesired();
     digitalWrite(motorX_step, LOW);
     digitalWrite(motorY_step, LOW);
     digitalWrite(motorZ_step, LOW);
