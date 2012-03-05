@@ -105,7 +105,12 @@ void AsiMS2000::interpretCommand(char commandBuffer[])
     {
       base = c.substring(0,s);
       _args = c.substring(s);
+#if ARDUINO>=100//toUppercase modifies string in place in 1.0
+      _args.toUpperCase();
+#else
       _args = _args.toUpperCase();
+#endif
+      
     }
     else
     {
