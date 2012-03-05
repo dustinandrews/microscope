@@ -64,9 +64,7 @@ long perSecRatio = 0;//set in setup routine based on interupts per sec.
 
 //Variables to pass motor timing information into interupt routine.
 const float moveTolerance = 0.000599;//define how close the position has to be in tenths of micrometers.
-volatile int mx_persec = 0;
-volatile int my_persec = 0;
-volatile int mz_persec = 0;
+volatile AxisSettings axisSpeed;
 volatile int interupts = 0;
 volatile AxisSettings actualPosition;
 volatile AxisSettings axisDirection;
@@ -151,28 +149,7 @@ void loop()
   if(interupts >= intPerSec)
   {
     interupts = 0;
-    char buffer[50];
-    sprintf(buffer, "x %d    y %d    z %d", axisDirection.x, axisDirection.z, axisDirection.z);
-    Serial.println(buffer);
-    AxisSettings inputs;
-    readInputs(&inputs);
-    sprintf(buffer, "x %d    y %d    z %d", inputs.x, inputs.y, inputs.z);
-    Serial.println(buffer);
-    
-    adjustInput(&inputs);
-    sprintf(buffer, "x %d    y %d    z %d", inputs.x, inputs.y, inputs.z);
-    Serial.println(buffer);   
-    
-    calculateMotorSpeeds(&inputs); 
-    sprintf(buffer, "x %d    y %d    z %d", inputs.x, inputs.y, inputs.z);
-    Serial.println(buffer);   
-
-    sprintf(buffer, "x %d    y %d    z %d\n", mx_persec, my_persec, mz_persec);       
-    Serial.println(buffer);
   }
-  
-
-   
 }
 
 void displayCurrentToDesired()
@@ -185,14 +162,14 @@ void displayCurrentToDesired()
     reply.concat(String(buffer) + "->");
     dtostrf(d.x,1,4,buffer);
     reply.concat(String(buffer) + " ");
-    reply.concat(mx_persec);
+    reply.concat(axisSpeed.x);
     reply.concat(" ");
 
     dtostrf(a.y,1,4,buffer);
     reply.concat(String(buffer) + "->");
     dtostrf(d.y,1,4,buffer);
     reply.concat(String(buffer) + " ");
-    reply.concat(my_persec);
+    reply.concat(axisSpeed.y);
     reply.concat(" ");
 
 
@@ -200,7 +177,7 @@ void displayCurrentToDesired()
     reply.concat(String(buffer) + "->");
     dtostrf(d.z,1,4,buffer);
     reply.concat(String(buffer) + " ");
-    reply.concat(mz_persec);
+    reply.concat(axisSpeed.z);
     reply.concat(" ");
     
     Serial.println(reply);
@@ -314,9 +291,9 @@ void calculateMotorSpeeds(AxisSettings *inputs)
 
 void setMotorSpeeds(AxisSettings *inputs)
 {
-  mx_persec = inputs->x;
-  my_persec = inputs->y;
-  mz_persec = inputs->z;  
+  axisSpeed.x = inputs->x;
+  axisSpeed.y = inputs->y;
+  axisSpeed.z = inputs->z;  
 }
 
 
@@ -328,24 +305,24 @@ void motorCallback()
     digitalWrite(motorZ_step, LOW);
     
     interupts++;
-    long ma_mod = intPerSec/mx_persec;
-    long mb_mod = intPerSec/my_persec;
-    long mc_mod = intPerSec/mz_persec;
+    long ma_mod = intPerSec/axisSpeed.x;
+    long mb_mod = intPerSec/axisSpeed.y;
+    long mc_mod = intPerSec/axisSpeed.z;
    
    
-    if(mx_persec > 0 && interupts % ma_mod == 0)
+    if(axisSpeed.x > 0 && interupts % ma_mod == 0)
     {
       digitalWrite(motorX_step, HIGH);
       if(axisDirection.x){actualPosition.x++;}else{actualPosition.x--;}       
     }
     
-    if(my_persec > 0 && interupts % mb_mod == 0)
+    if(axisSpeed.y > 0 && interupts % mb_mod == 0)
     {
       digitalWrite(motorY_step, HIGH);
       if(axisDirection.y){actualPosition.y++;}else{actualPosition.y--;}
     }
     
-    if(mz_persec > 0 && interupts % mc_mod == 0)
+    if(axisSpeed.z > 0 && interupts % mc_mod == 0)
     {
       digitalWrite(motorZ_step, HIGH);
       if(axisDirection.z){actualPosition.z++;}else{actualPosition.z--;}
@@ -369,34 +346,34 @@ void moveToDesired()
   if(!isWithinTolerance(actualF.x, desired.x, moveTolerance))
   {    
     axisDirection.x = setDir(desired.x - actualF.x, motorX_dir);
-    mx_persec = intPerSec;
+    axisSpeed.x = intPerSec;
     isAtDesired = false;
   }
   else
   {
-    mx_persec = 0;
+    axisSpeed.x = 0;
   }
   
   if(!isWithinTolerance(actualF.y, desired.y, moveTolerance))
   {
     axisDirection.y = setDir(desired.y - actualF.y, motorY_dir);
-    my_persec = intPerSec;
+    axisSpeed.y = intPerSec;
     isAtDesired = false;
   }
   else
   {
-    my_persec = 0;
+    axisSpeed.y = 0;
   }
   
   if(!isWithinTolerance(actualF.z, desired.z, moveTolerance))
   {
     axisDirection.z = setDir(desired.z - actualF.z, motorZ_dir);
-    mz_persec = intPerSec;
+    axisSpeed.z = intPerSec;
     isAtDesired = false;
   }
   else
   {
-    mz_persec = 0;
+    axisSpeed.z = 0;
   }
   
   if(isAtDesired)
