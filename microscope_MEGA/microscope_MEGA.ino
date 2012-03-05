@@ -58,12 +58,12 @@ const int pot_center = 512;
 /////////////////////////////////////////
 //Timing Constants and shared variables//
 /////////////////////////////////////////
-const int32_t intPerSec = 1500;//number of interupts proccessed per second.
+const int32_t intPerSec = 1500;//number of interupts proccessed per second. Also the max number of 1/8th motor steps per second.
 const int input_delay = 500; //delay between reading inputs in microseconds.
 long perSecRatio = 0;//set in setup routine based on interupts per sec.
 
 //Variables to pass motor timing information into interupt routine.
-const float moveTolerance = 0.05;//define how close the position has to be in micrometers.
+const float moveTolerance = 0.000599;//define how close the position has to be in tenths of micrometers.
 volatile int mx_persec = 0;
 volatile int my_persec = 0;
 volatile int mz_persec = 0;
@@ -119,7 +119,6 @@ void setup()
   actualPosition.x = 0;
   actualPosition.y = 0;
   actualPosition.z = 0;
-  actualPositionToF;
   
   //setup the interupt routine.
   perSecRatio = ((512L * 512L) / intPerSec)+1;//+1 to make up for not doing floating point calculations.
@@ -141,18 +140,20 @@ void loop()
   handleAsiCommands();
    
   time = millis();
+  //handle direct input according to the delay and only if not already busy.
   if(time - lastInputTime > input_delay && AsiMS2000.getBusyStatus() == false)
   {
     realTimeHandler(time);
     lastInputTime = time;     
   }
   
+  //rollover the interupt timer for the timer callback routine.
   if(interupts >= intPerSec)
   {
     interupts = 0;
-    AsiMS2000.checkSerial();
   }
-  displayCurrentToDesired();
+  
+
    
 }
 
@@ -190,47 +191,7 @@ void displayCurrentToDesired()
 
 void handleAsiCommands()
 {
-  AxisSettingsF desired = AsiMS2000.getDesiredPos();  
-  AxisSettingsF actualF = actualPositionToF();
-  int isAtDesired = true;
-  
-  if(!isWithinTolerance(actualF.x, desired.x, moveTolerance))
-  {
-    axisDirection.x = setDir(desired.x - actualF.x, motorX_dir);
-    mx_persec = 10;
-    isAtDesired = false;
-  }
-  else
-  {
-    mx_persec = 0;
-  }
-  
-  if(!isWithinTolerance(actualF.y, desired.y, moveTolerance))
-  {
-    axisDirection.y = setDir(desired.y - actualF.y, motorY_dir);
-    my_persec = 10;
-    isAtDesired = false;
-  }
-  else
-  {
-    my_persec = 0;
-  }
-  
-  if(!isWithinTolerance(actualF.z, desired.z, moveTolerance))
-  {
-    axisDirection.z = setDir(desired.z - actualF.z, motorZ_dir);
-    mz_persec = 10;
-    isAtDesired = false;
-  }
-  else
-  {
-    mz_persec = 0;
-  }
-  
-  if(isAtDesired)
-  {
-    AsiMS2000.clearBusyStatus();
-  }
+  AsiMS2000.checkSerial();
 }
 
 
@@ -251,7 +212,6 @@ int isWithinTolerance(float one, float two, float tolerance)
   {
     return false;
   } 
-  Serial.println("TOLERATED!!!!");
   return true;
 }
 
@@ -286,7 +246,7 @@ void setMotorDirection(AxisSettings *inputs)
    axisDirection.z = setDir(inputs->z, motorZ_dir);
 }
 
-int setDir(int pos, int pin)
+int setDir(float pos, int pin)
 {
    if(pos > 0)
    {
@@ -299,6 +259,7 @@ int setDir(int pos, int pin)
      return false;
    }
 }
+
 
 void calculateMotorSpeeds(AxisSettings *inputs)
 {
@@ -321,6 +282,7 @@ void calculateMotorSpeeds(AxisSettings *inputs)
 
 void motorCallback()
 {
+    moveToDesired();
     digitalWrite(motorX_step, LOW);
     digitalWrite(motorY_step, LOW);
     digitalWrite(motorZ_step, LOW);
@@ -329,6 +291,7 @@ void motorCallback()
     long ma_mod = intPerSec/mx_persec;
     long mb_mod = intPerSec/my_persec;
     long mc_mod = intPerSec/mz_persec;
+   
    
     if(mx_persec > 0 && interupts % ma_mod == 0)
     {
@@ -349,6 +312,58 @@ void motorCallback()
     }
     
     AsiMS2000.setCurrentPos(actualPositionToF());
+}
+
+void moveToDesired()
+{
+  if(!AsiMS2000.getBusyStatus())
+  {
+    return;
+  }
+  //Calculate which motors to move if busy (moving) status is true;
+  
+  AxisSettingsF desired = AsiMS2000.getDesiredPos();  
+  AxisSettingsF actualF = actualPositionToF();
+  int isAtDesired = true;
+  
+  if(!isWithinTolerance(actualF.x, desired.x, moveTolerance))
+  {    
+    axisDirection.x = setDir(desired.x - actualF.x, motorX_dir);
+    mx_persec = intPerSec;
+    isAtDesired = false;
+  }
+  else
+  {
+    mx_persec = 0;
+  }
+  
+  if(!isWithinTolerance(actualF.y, desired.y, moveTolerance))
+  {
+    axisDirection.y = setDir(desired.y - actualF.y, motorY_dir);
+    my_persec = intPerSec;
+    isAtDesired = false;
+  }
+  else
+  {
+    my_persec = 0;
+  }
+  
+  if(!isWithinTolerance(actualF.z, desired.z, moveTolerance))
+  {
+    axisDirection.z = setDir(desired.z - actualF.z, motorZ_dir);
+    mz_persec = intPerSec;
+    isAtDesired = false;
+  }
+  else
+  {
+    mz_persec = 0;
+  }
+  
+  if(isAtDesired)
+  {
+    AsiMS2000.clearBusyStatus();
+    displayCurrentToDesired();
+  }
 }
 
 
