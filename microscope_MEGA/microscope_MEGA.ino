@@ -141,7 +141,7 @@ void loop()
    
   time = millis();
   //handle direct input only if not already busy handling moves from the PC.
-  if(time - lastInputTime > input_delay) && AsiMS2000.getBusyStatus() == false)
+  if(time - lastInputTime > input_delay && AsiMS2000.getBusyStatus() == false)
   {
     realTimeHandler(time);
     lastInputTime = time;     
