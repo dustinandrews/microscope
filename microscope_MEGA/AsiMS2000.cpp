@@ -11,6 +11,7 @@
 #include "AsiSettings.h"
 //needs to be long enough to contain biggest command string.
 #define BUFFERSIZE 128
+#define DEBUG_SERIAL 0
 
 AsiSettings AsiSettings;
 
@@ -31,6 +32,7 @@ AsiMS2000::AsiMS2000()
 void AsiMS2000::clearBusyStatus()
 {
     _busyStatus = false;
+    displayCurrentToDesired("Done");
 }
 
 int AsiMS2000::getBusyStatus()
@@ -62,16 +64,12 @@ void AsiMS2000::checkSerial()
   if(Serial1.available() > 0)
   {
     inByte = Serial1.read();
-    int x = (int)inByte;
-    inputPrint(x);
- 
     if(bufferPos > BUFFERSIZE)
     {
       bufferPos = 0;
       bufferOverunError(commandBuffer);
       return;
     }
-    
     
     //check for <CR> or | since arduino env can't send CR.
     if(inByte == 13 || inByte == 124)
@@ -253,9 +251,12 @@ int AsiMS2000::getCommandNum(String c)
   {
     if( c.equalsIgnoreCase(_commands[i]) || c.equalsIgnoreCase(_shortcuts[i]) )
     {
-      char buffer [100];
-      sprintf(buffer, "%d: %s, %s", i, _commands[i], _shortcuts[i]);
-      debugPrintln(buffer);
+      if(DEBUG_SERIAL)
+      {
+        char buffer [100];
+        sprintf(buffer, "%d: %s, %s", i, _commands[i], _shortcuts[i]);
+        debugPrintln(buffer);
+      }
       return i;
     }     
   }
@@ -353,6 +354,13 @@ void AsiMS2000::serialPrintln(char* data)
   Serial1.println(data);
 }
 
+void AsiMS2000::debugPrintln(String data)
+{
+  char buffer[data.length()];
+  data.toCharArray(buffer, data.length());
+  debugPrintln(buffer);
+}
+
 void AsiMS2000::debugPrintln(char* data)
 {
   Serial.print("DEBUG:[");
@@ -362,19 +370,14 @@ void AsiMS2000::debugPrintln(char* data)
 
 void AsiMS2000::outputPrintln(char * data)
 {
+  if(! DEBUG_SERIAL) {return;}
   Serial.print("Out>");
   Serial.println(data);
 }
 
-void AsiMS2000::inputPrint(byte data)
-{
-  //Serial.print("(");
-  //Serial.print(data);
-  //Serial.print(")");
-}
-
 void AsiMS2000::inputPrintln(char * data)
 {
+  if(! DEBUG_SERIAL) {return;}
   Serial.print("IN<");
   Serial.print(data);
   Serial.println(""); 
@@ -439,6 +442,31 @@ void AsiMS2000::getSetCommand2(AxisSettingsF *setting)
     }
 }
 
+
+//call to display detailed position information on the debug port.
+void AsiMS2000::displayCurrentToDesired(char message[])
+{
+    char buffer[20];
+    String reply = String(message);    
+    AxisSettingsF a = AsiSettings.currentPos;
+    AxisSettingsF d = AsiSettings.desiredPos;
+    dtostrf(a.x,1,4,buffer);
+    reply.concat(" " + String(buffer) + "->");
+    dtostrf(d.x,1,4,buffer);
+    reply.concat(String(buffer) + " ");
+    
+    dtostrf(a.y,1,4,buffer);
+    reply.concat(String(buffer) + "->");
+    dtostrf(d.y,1,4,buffer);
+    reply.concat(String(buffer) + " ");
+
+    dtostrf(a.z,1,4,buffer);
+    reply.concat(String(buffer) + "->");
+    dtostrf(d.z,1,4,buffer);
+    reply.concat(String(buffer) + " ");
+    
+    debugPrintln(reply);
+}
 
 /* These are the commands from the protocols. The program looks up the command
  * and runs the desired method from below. The methods 
@@ -790,7 +818,8 @@ void AsiMS2000::move()
   AsiSettings.desiredPos.x = units.x;
   AsiSettings.desiredPos.y = units.y;
   AsiSettings.desiredPos.z = units.z;
-  serialPrintln(":A");  
+  serialPrintln(":A");
+  displayCurrentToDesired("Move");  
 }
 
 
@@ -804,6 +833,7 @@ void AsiMS2000::movrel()
   AsiSettings.desiredPos.y += units.y;
   AsiSettings.desiredPos.z += units.z;
   serialPrintln(":A");  
+  displayCurrentToDesired("MoveRel");
 }
 
 

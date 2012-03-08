@@ -31,6 +31,7 @@ class AsiMS2000
         AxisSettingsF getCurrentPos();
         AxisSettingsF getDesiredPos();
         void setCurrentPos(AxisSettingsF pos);
+        void displayCurrentToDesired(char message[]);
         
   private:
         volatile int _busyStatus;
@@ -51,6 +52,7 @@ class AsiMS2000
         int getCommandNum(String c);
         void selectCommand(int commandNum);
         void debugPrintln(char* data);
+        void debugPrintln(String data);
         void outputPrintln(char* data);
         void inputPrint(byte data);
         void inputPrintln(char * data);

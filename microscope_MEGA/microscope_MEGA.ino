@@ -51,7 +51,7 @@ const int motorZ_input = A2;
 /////////////////////////
 //programming constants//
 /////////////////////////
-const int dead_zone = 10; //number of units out of 1024 that counts as centered;
+const int dead_zone = 20; //number of units out of 512 that count as centered;
 const int pot_center = 512;
 
 
@@ -151,44 +151,29 @@ void loop()
   if(interupts >= intPerSec)
   {
     interupts = 0;
+    displayDebugInfo();    
   }
 }
 
-//call to display detailed position information on the debug port.
-void displayCurrentToDesired()
+void displayDebugInfo()
 {
-    char buffer[20];
-    String reply = "";    
-    AxisSettingsF a = actualPositionToF();
-    AxisSettingsF d = AsiMS2000.getDesiredPos();
-    dtostrf(a.x,1,4,buffer);
-    reply.concat(String(buffer) + "->");
-    dtostrf(d.x,1,4,buffer);
-    reply.concat(String(buffer) + " ");
-    reply.concat(axisSpeed.x);
-    reply.concat(" ");
-
-    dtostrf(a.y,1,4,buffer);
-    reply.concat(String(buffer) + "->");
-    dtostrf(d.y,1,4,buffer);
-    reply.concat(String(buffer) + " ");
-    reply.concat(axisSpeed.y);
-    reply.concat(" ");
-
-
-    dtostrf(a.z,1,4,buffer);
-    reply.concat(String(buffer) + "->");
-    dtostrf(d.z,1,4,buffer);
-    reply.concat(String(buffer) + " ");
-    reply.concat(axisSpeed.z);
-    reply.concat(" ");
+    if(! DEBUG) {return;}
     
-    Serial.println(reply);
+    AsiMS2000.displayCurrentToDesired("current");  
+
+    AxisSettings curr;
+    readInputs(&curr);
+    char buffer[100];
+    sprintf(buffer, "inputs: x:%d    y:%d    z:%d", 
+      (int)analogRead(motorX_input),
+      (int)analogRead(motorY_input),
+      (int)analogRead(motorZ_input)
+    );
+    Serial.println(buffer);     
 }
 
-
 //convert from int position to float postion
-//actual position is maintained as INT for accuracy.
+//actual position is maintained as LONG for accuracy.
 AxisSettingsF actualPositionToF()
 {
   AxisSettingsF floatPosition;
@@ -210,7 +195,7 @@ int isWithinTolerance(float one, float two, float tolerance)
 //Check inputs and set motor speeds appropriatly.
 void realTimeHandler(unsigned long time)
 {
-    AxisSettings inputArray;
+    AxisSettings inputArray;   
     readInputs(&inputArray);
     adjustInput(&inputArray);
     setMotorDirection(&inputArray);
@@ -223,7 +208,7 @@ void readInputs(AxisSettings *inputs)
 {
   inputs->x = analogRead(motorX_input);
   inputs->y = analogRead(motorY_input);
-  inputs->z = analogRead(motorZ_input);
+  inputs->z = analogRead(motorZ_input); 
 }
 
 void adjustInput(AxisSettings *inputs)
