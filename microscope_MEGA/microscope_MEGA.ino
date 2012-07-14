@@ -48,10 +48,14 @@ const int motorX_input = A0;
 const int motorY_input = A1;
 const int motorZ_input = A2;
 
+const int motorX_lockout = 22;
+const int motorY_lockout = 24;
+const int motorZ_lockout = 26;
+
 /////////////////////////
 //programming constants//
 /////////////////////////
-const int dead_zone = 20; //number of units out of 512 that count as centered;
+const int dead_zone = 25; //number of units out of 512 that count as centered;
 const int pot_center = 512;
 
 
@@ -105,6 +109,10 @@ void setup()
   pinMode(motorX_input, INPUT);
   pinMode(motorY_input, INPUT);
   pinMode(motorZ_input, INPUT);
+ 
+  pinMode(motorX_lockout, INPUT);
+  pinMode(motorY_lockout, INPUT);
+  pinMode(motorZ_lockout, INPUT);
  
   //enable output and reset the boards.
   digitalWrite(disableSteppers, LOW);
@@ -165,11 +173,20 @@ void displayDebugInfo()
     readInputs(&curr);
     char buffer[100];
     sprintf(buffer, "inputs: x:%d    y:%d    z:%d", 
-      (int)analogRead(motorX_input),
-      (int)analogRead(motorY_input),
-      (int)analogRead(motorZ_input)
+      (int)curr.x,
+      (int)curr.y,
+      (int)curr.z
     );
     Serial.println(buffer);     
+    
+    AxisSettings lock;
+    readLockouts(&lock);
+    sprintf(buffer, "lockouts: x:%d    y:%d    z:%d", 
+      (int)lock.x,
+      (int)lock.y,
+      (int)lock.z
+    );
+    Serial.println(buffer);
 }
 
 //convert from int position to float postion
@@ -195,12 +212,14 @@ int isWithinTolerance(float one, float two, float tolerance)
 //Check inputs and set motor speeds appropriatly.
 void realTimeHandler(unsigned long time)
 {
-    AxisSettings inputArray;   
+    AxisSettings inputArray;
+    AxisSettings lockoutArray;  
     readInputs(&inputArray);
+    readLockouts(&lockoutArray);
     adjustInput(&inputArray);
     setMotorDirection(&inputArray);
     calculateMotorSpeeds(&inputArray);
-    setMotorSpeeds(&inputArray);
+    setMotorSpeeds(&inputArray, &lockoutArray);
 }
 
 
@@ -209,6 +228,13 @@ void readInputs(AxisSettings *inputs)
   inputs->x = analogRead(motorX_input);
   inputs->y = analogRead(motorY_input);
   inputs->z = analogRead(motorZ_input); 
+}
+
+void readLockouts(AxisSettings *lockouts)
+{
+  lockouts->x = digitalRead(motorX_lockout);
+  lockouts->y = digitalRead(motorY_lockout);
+  lockouts->z = digitalRead(motorZ_lockout); 
 }
 
 void adjustInput(AxisSettings *inputs)
@@ -225,11 +251,34 @@ void setMotorDirection(AxisSettings *inputs)
    axisDirection.z = setDir(inputs->z, motorZ_dir);
 }
 
-void setMotorSpeeds(AxisSettings *inputs)
+void setMotorSpeeds(AxisSettings *inputs, AxisSettings *lockouts)
 {
-  axisSpeed.x = inputs->x;
-  axisSpeed.y = inputs->y;
-  axisSpeed.z = inputs->z;  
+  if(lockouts->x == 1) 
+  { 
+    axisSpeed.x = inputs->x; 
+  }
+  else
+  {
+     axisSpeed.x = 0; 
+  }
+  
+  if(lockouts->y == 1) 
+  { 
+    axisSpeed.y = inputs->y; 
+  }
+  else
+  {
+     axisSpeed.y = 0; 
+  }
+  
+  if(lockouts->z == 1) 
+  { 
+    axisSpeed.z = inputs->z; 
+  }
+  else
+  {
+     axisSpeed.z = 0; 
+  }
 }
 
 //set the direction to the pin and returns the value set.
