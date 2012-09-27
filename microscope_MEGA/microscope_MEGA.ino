@@ -56,8 +56,18 @@ const int motorZ_lockout = 26;
 //programming constants//
 /////////////////////////
 const int dead_zone = 25; //number of units out of 512 that count as centered;
-const int pot_center = 512;
 
+const int xMin = 368;
+const int xMax = 623;
+const int xCenter = 495;
+
+const int yMin = 374;
+const int yMax = 640;
+const int yCenter = 508;
+
+const int zMin = 377;
+const int zMax = 644;
+const int zCenter = 511;
 
 /////////////////////////////////////////
 //Timing Constants and shared variables//
@@ -72,7 +82,9 @@ volatile AxisSettings axisSpeed;
 volatile int interupts = 0;
 volatile AxisSettings actualPosition;
 volatile AxisSettings axisDirection;
-
+volatile AxisSettings controlMin;
+volatile AxisSettings controlMax;
+volatile AxisSettings controlCenter;
 
 //The actual position stored as INT divided by this factor will give
 //The position in tenths of microns.
@@ -81,6 +93,7 @@ const int stepConversion = 1000;
 
 void setup() 
 {
+  
   //First, disable the steppers during setup.
   pinMode(disableSteppers, OUTPUT);
   digitalWrite(disableSteppers, HIGH);
@@ -125,6 +138,19 @@ void setup()
   actualPosition.x = 0;
   actualPosition.y = 0;
   actualPosition.z = 0;
+  
+  controlMin.x = xMin;   
+  controlMin.y = yMin;
+  controlMin.z = zMin;
+
+  controlMax.x = xMax;
+  controlMax.y = yMax;
+  controlMax.z = zMax;
+  
+  controlCenter.x = xCenter;
+  controlCenter.y = yCenter;
+  controlCenter.z = zCenter;
+  
   
   //setup the interupt routine.
   perSecRatio = ((512L * 512L) / intPerSec)+1;//+1 to make up for not doing floating point calculations.
@@ -237,11 +263,38 @@ void readLockouts(AxisSettings *lockouts)
   lockouts->z = digitalRead(motorZ_lockout); 
 }
 
+
+//Scale range and set to offset from center.
 void adjustInput(AxisSettings *inputs)
 {
-   inputs->x = inputs->x - pot_center;
-   inputs->y = inputs->y - pot_center;
-   inputs->z = inputs->z - pot_center;
+   inputs->x = scaleInput(inputs->x, controlMin.x, controlMax.x, controlCenter.x);
+   inputs->y = scaleInput(inputs->y, controlMin.y, controlMay.y, controlCenter.y);
+   inputs->z = scaleInput(inputs->z, controlMin.z, controlMaz.z, controlCenter.z);
+}
+
+int scaleInput(int input, int controlMin, int controlMax, int controlCenter)
+{
+  //declare variables for use in if statements.
+  int range = 0;
+  int scaleConst = 0;
+ 
+  int offset = input - controlCenter;
+  
+  if(offset == 0) { return 0;}
+  
+  if(offset > 0) 
+  {
+    range = controlMax - controlCenter;
+    scaleConst = 512;
+  }
+  else if (offset < 0)
+  {
+    range = controlMin - controlCenter;
+    scaleConst = -512;
+  }
+  
+  int x = (offset * scaleConst) / range;
+  return x;
 }
 
 void setMotorDirection(AxisSettings *inputs)
