@@ -12,7 +12,7 @@
 // The TimerThree library is required.
 // Get it from http://www.arduino.cc/playground/Code/Timer1
 // Unpack the files someplace then add TimerThree.cpp and TimerThree.h from the 
-// Sketch->"Add File" menu.
+// Sketch->"Add File" menu. Alternatively, add it to your arduino Libraries.
 #include "TimerThree.h"
 
 //AsiMS2000 encapsulates the interface to the MicroManager.
@@ -267,34 +267,19 @@ void readLockouts(AxisSettings *lockouts)
 //Scale range and set to offset from center.
 void adjustInput(AxisSettings *inputs)
 {
-   inputs->x = scaleInput(inputs->x, controlMin.x, controlMax.x, controlCenter.x);
-   inputs->y = scaleInput(inputs->y, controlMin.y, controlMay.y, controlCenter.y);
-   inputs->z = scaleInput(inputs->z, controlMin.z, controlMaz.z, controlCenter.z);
+   inputs->x = scaleInput(inputs->x, controlMin.x, controlMax.x);
+   inputs->y = scaleInput(inputs->y, controlMin.y, controlMax.y);
+   inputs->z = scaleInput(inputs->z, controlMin.z, controlMax.z);
 }
 
-int scaleInput(int input, int controlMin, int controlMax, int controlCenter)
+int scaleInput(int oldValue, int oldMin, int oldMax)
 {
-  //declare variables for use in if statements.
-  int range = 0;
-  int scaleConst = 0;
- 
-  int offset = input - controlCenter;
-  
-  if(offset == 0) { return 0;}
-  
-  if(offset > 0) 
-  {
-    range = controlMax - controlCenter;
-    scaleConst = 512;
-  }
-  else if (offset < 0)
-  {
-    range = controlMin - controlCenter;
-    scaleConst = -512;
-  }
-  
-  int x = (offset * scaleConst) / range;
-  return x;
+  int oldRange = oldMax - oldMin;
+  static const int newMin = -512;
+  static const int newMax = 512;
+  int newRange = 1024; //newMax - newMin;
+  int newValue = (((oldValue - oldMin) * newRange) / oldRange) + newMin);
+  return newValue;
 }
 
 void setMotorDirection(AxisSettings *inputs)
